@@ -127,10 +127,6 @@ export default function HomePage() {
       <Header categories={categories} onSearch={handleSearch} />
 
       <main>
-        <section className="max-w-7xl mx-auto px-6 md:px-8 py-8 md:py-12">
-          <HeroCarousel slides={carouselSlides} />
-        </section>
-
         <section className="max-w-6xl mx-auto px-6 md:px-8 py-12 md:py-16">
           <h2 className="text-3xl md:text-4xl font-bold font-serif mb-8" data-testid="latest-content-heading">
             Latest Content
@@ -168,6 +164,10 @@ export default function HomePage() {
         />
 
         <SocialMediaSection />
+
+        <section className="max-w-7xl mx-auto px-6 md:px-8 py-8 md:py-12">
+          <HeroCarousel slides={carouselSlides} />
+        </section>
       </main>
 
       <footer className="bg-muted/30 border-t py-8">
