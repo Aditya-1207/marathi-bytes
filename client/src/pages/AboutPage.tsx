@@ -21,7 +21,7 @@ export default function AboutPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" style={{ paddingTop: 'var(--header-height, 200px)' }}>
       <Header categories={categories} onSearch={handleSearch} />
 
       <main>

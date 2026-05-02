@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Search, Menu, X, Instagram, Youtube, Facebook } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,17 +13,60 @@ export default function Header({ categories = [], onSearch }: HeaderProps) {
   const [location] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [visible, setVisible] = useState(true);
+  const lastScrollY = useRef(0);
+  const headerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const updateHeight = () => {
+      if (headerRef.current) {
+        document.documentElement.style.setProperty(
+          '--header-height',
+          `${headerRef.current.offsetHeight}px`
+        );
+      }
+    };
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    if (headerRef.current) observer.observe(headerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      const delta = currentY - lastScrollY.current;
+
+      if (currentY < 60) {
+        setVisible(true);
+      } else if (delta > 6) {
+        setVisible(false);
+        setMobileMenuOpen(false);
+      } else if (delta < -6) {
+        setVisible(true);
+      }
+
+      lastScrollY.current = currentY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (onSearch && searchQuery.trim()) {
       onSearch(searchQuery);
-      console.log('Search triggered:', searchQuery);
     }
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-background border-b">
+    <header
+      ref={headerRef}
+      className="fixed top-0 left-0 right-0 z-50 bg-background border-b transition-transform duration-300 ease-in-out"
+      style={{ transform: visible ? 'translateY(0)' : 'translateY(-100%)' }}
+      data-testid="site-header"
+    >
       <div className="max-w-7xl mx-auto">
         <div className="pt-6 pb-4 px-6 md:px-8 text-center border-b">
           <Link href="/">

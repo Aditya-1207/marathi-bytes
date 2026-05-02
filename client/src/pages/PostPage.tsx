@@ -117,7 +117,7 @@ export default function PostPage() {
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background" style={{ paddingTop: 'var(--header-height, 200px)' }}>
         <Header categories={categories} onSearch={handleSearch} />
         <div className="max-w-3xl mx-auto px-6 md:px-8 py-12 text-center">
           <h1 className="text-3xl font-bold mb-4">Post Not Found</h1>
@@ -128,7 +128,7 @@ export default function PostPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" style={{ paddingTop: 'var(--header-height, 200px)' }}>
       <Header categories={categories} onSearch={handleSearch} />
 
       <article className="max-w-3xl mx-auto px-6 md:px-8 py-12 md:py-16">
