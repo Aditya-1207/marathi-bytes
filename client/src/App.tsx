@@ -8,6 +8,7 @@ import CategoryPage from "@/pages/CategoryPage";
 import PostPage from "@/pages/PostPage";
 import AboutPage from "@/pages/AboutPage";
 import NotFound from "@/pages/not-found";
+import ScrollToTop from "@/components/ScrollToTop";
 
 function Router() {
   return (
@@ -26,6 +27,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
+        <ScrollToTop />
         <Router />
       </TooltipProvider>
     </QueryClientProvider>
