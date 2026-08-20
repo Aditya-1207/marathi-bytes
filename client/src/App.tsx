@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Router as WouterRouter } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -10,7 +10,11 @@ import AboutPage from "@/pages/AboutPage";
 import NotFound from "@/pages/not-found";
 import ScrollToTop from "@/components/ScrollToTop";
 
-function Router() {
+// import.meta.env.BASE_URL matches vite.config.ts's `base` ("/" in dev, "/marathi-bytes/" in prod)
+// so routing works correctly whether the app is served at the domain root or a GitHub Pages subpath.
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+function AppRoutes() {
   return (
     <Switch>
       <Route path="/" component={HomePage} />
@@ -27,8 +31,10 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        <ScrollToTop />
-        <Router />
+        <WouterRouter base={basePath}>
+          <ScrollToTop />
+          <AppRoutes />
+        </WouterRouter>
       </TooltipProvider>
     </QueryClientProvider>
   );
