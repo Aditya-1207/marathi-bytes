@@ -1,0 +1,55 @@
+backend:
+  name: github
+  repo: Aditya-1207/marathi-bytes
+  branch: main
+
+local_backend: true
+
+media_folder: "client/public/blog-images"
+public_folder: "/blog-images"
+
+collections:
+  - name: poetry
+    label: "Poetry / कविता"
+    label_singular: "Poem"
+    folder: "client/src/content/poetry"
+    create: true
+    slug: "{{year}}{{month}}{{day}}-{{slug}}"
+    identifier_field: title
+    fields:
+      - { label: "Title / शीर्षक", name: title, widget: string }
+      - { label: "Date / तारीख", name: date, widget: datetime, format: "YYYY-MM-DD", date_format: "YYYY-MM-DD", time_format: false, picker_utc: true }
+      - { label: "Excerpt / थोडक्यात", name: excerpt, widget: text, required: false }
+      - { label: "Thumbnail / चित्र", name: thumbnail, widget: image, required: false }
+      - { label: "Tags / टॅग्स", name: tags, widget: list, required: false }
+      - { label: "Content / मजकूर", name: body, widget: markdown }
+
+  - name: articles
+    label: "Articles / लेख"
+    label_singular: "Article"
+    folder: "client/src/content/articles"
+    create: true
+    slug: "{{year}}{{month}}{{day}}-{{slug}}"
+    identifier_field: title
+    fields:
+      - { label: "Title / शीर्षक", name: title, widget: string }
+      - { label: "Date / तारीख", name: date, widget: datetime, format: "YYYY-MM-DD", date_format: "YYYY-MM-DD", time_format: false, picker_utc: true }
+      - { label: "Excerpt / थोडक्यात", name: excerpt, widget: text, required: false }
+      - { label: "Thumbnail / चित्र", name: thumbnail, widget: image, required: false }
+      - { label: "Tags / टॅग्स", name: tags, widget: list, required: false }
+      - { label: "Content / मजकूर", name: body, widget: markdown }
+
+  - name: ukhane
+    label: "Ukhane / उखाणे"
+    label_singular: "Ukhana"
+    folder: "client/src/content/ukhane"
+    create: true
+    slug: "{{year}}{{month}}{{day}}-{{slug}}"
+    identifier_field: title
+    fields:
+      - { label: "Title / शीर्षक", name: title, widget: string }
+      - { label: "Date / तारीख", name: date, widget: datetime, format: "YYYY-MM-DD", date_format: "YYYY-MM-DD", time_format: false, picker_utc: true }
+      - { label: "Excerpt / थोडक्यात", name: excerpt, widget: text, required: false }
+      - { label: "Thumbnail / चित्र", name: thumbnail, widget: image, required: false }
+      - { label: "Tags / टॅग्स", name: tags, widget: list, required: false }
+      - { label: "Content / मजकूर", name: body, widget: markdown }
