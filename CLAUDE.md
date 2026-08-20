@@ -1,0 +1,45 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+Before planning new work, also read `spec/mission.md` (why this project exists and what it's for), `spec/spec.md` (the current roadmap — required vs. good-to-have), and `spec/tech-stack.md` (what's actually load-bearing vs. unused scaffold). This file covers *how the code works*; those cover *why* and *what's next*.
+
+## Commands
+
+```
+npm install       # install dependencies
+npm run dev        # start dev server (Vite middleware + Express) on PORT env var, default 5000
+npm run build       # vite build (client) + esbuild bundle of server/index-prod.ts into dist/index.js
+npm start           # run the production build (requires npm run build first)
+npm run check        # tsc --noEmit type-check across client/server/shared
+npm run db:push      # drizzle-kit push — pushes shared/schema.ts to DATABASE_URL (schema is currently unused by the app; see below)
+```
+
+There is no test suite/framework configured in this repo.
+
+## Architecture
+
+This is a **client-rendered SPA blog**, not a traditional full-stack app, despite the Express scaffold. It was originally scaffolded on Replit (see `.replit`, the `@replit/vite-plugin-*` devDependencies).
+
+**Content model — this is the core thing to understand:**
+Posts are markdown files with YAML frontmatter under `client/src/content/{poetry,articles,ukhane,instagram}/*.md`. `client/src/lib/content.ts` loads *all* of them at build/bundle time via `import.meta.glob(..., { eager: true })` — there is no runtime fetch, no CMS API, no database read. Frontmatter is parsed with `js-yaml` (not a hand-rolled parser — it must stay a real YAML parser since content can come from the CMS below, which emits multi-line YAML lists). The filename (minus `.md`) becomes the post's URL slug (`/post/<slug>`); the containing folder becomes its category. The `instagram` folder/category exists in the loader but is **not** wired into site navigation or routes — it's orphaned.
+
+**Routing (`client/src/App.tsx`)** uses `wouter`, client-side only: `/`, `/category/:category`, `/post/:id`, `/about`. Note that `HomePage`, `CategoryPage`, and `PostPage` all have search/tag-click handlers that navigate to `/search?q=...` and `/tag/:tag` — **those routes don't exist**, so searching or clicking a tag currently 404s.
+
+The `categories` array (id/name/label per category) is duplicated by hand across `HomePage.tsx`, `CategoryPage.tsx`, and `PostPage.tsx` rather than centralized — keep all copies in sync when adding/renaming a category.
+
+**Content authoring via Decap CMS:** `client/public/admin/` (`config.yml` + `index.html`) is a Decap CMS instance that gives non-technical editors a web form to create/edit posts, which commits directly to the `client/src/content/*` folders via the GitHub API (`backend.repo: Aditya-1207/marathi-bytes`, branch `main`). `local_backend: true` lets you test the CMS without OAuth by running `npx decap-server` alongside `npm run dev`, then visiting `/admin/index.html` (note: in dev mode, `/admin/` without the filename 404s — see server note below; this isn't an issue in the production static build).
+
+**Server (`server/`)** is mostly inert:
+- `app.ts` — shared Express app, request logger, and the `server.listen(...)` call. `reusePort` is conditioned on `process.platform !== "win32"` because it's a Linux-only socket option that throws `ENOTSUP` on Windows.
+- `index-dev.ts` — mounts Vite in middleware mode with `appType: "custom"`, which disables Vite's automatic directory→`index.html` resolution (so `/admin/` needs the explicit `/admin/index.html` path in dev; static hosting doesn't have this issue).
+- `index-prod.ts` — just `express.static(dist/public)` with an SPA fallback to `index.html`.
+- `routes.ts` — empty scaffold (no routes registered).
+- `storage.ts` — in-memory `MemStorage` implementing a `users` CRUD interface; unused.
+- `shared/schema.ts` + `drizzle.config.ts` — Drizzle ORM schema for a Postgres `users` table; scaffolded but nothing in the app calls it.
+
+None of the above server/db/auth machinery is load-bearing for the blog itself — the site is fully static content once built, so it's a valid target for static hosting (e.g. GitHub Pages) with the Express server dropped entirely.
+
+**UI:** shadcn/ui (`"new-york"` style, configured in `components.json`) + Tailwind CSS 3. Shared primitives live in `client/src/components/ui`; page-level composed components live directly in `client/src/components`. `design_guidelines.md` documents the intended typography, spacing, and component specs (Devanagari + Latin type pairing, card/carousel/pill specs, etc.) — consult it before changing layout or visual design.
+
+**Path aliases** (`tsconfig.json` / `vite.config.ts`): `@/*` → `client/src/*`, `@shared/*` → `shared/*`, `@assets/*` → `attached_assets/*`.
