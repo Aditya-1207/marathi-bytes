@@ -1,3 +1,5 @@
+import { load as parseYaml } from 'js-yaml';
+
 export interface Post {
   id: string;
   title: string;
@@ -28,22 +30,17 @@ function parseFrontmatter(raw: string): { data: Record<string, string | string[]
   const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
   if (!match) return { data: {}, content: raw.trim() };
 
+  const parsed = parseYaml(match[1]);
   const data: Record<string, string | string[]> = {};
-  match[1].split('\n').forEach((line) => {
-    const colonIdx = line.indexOf(':');
-    if (colonIdx === -1) return;
-    const key = line.slice(0, colonIdx).trim();
-    const value = line.slice(colonIdx + 1).trim();
-    if (value.startsWith('[') && value.endsWith(']')) {
-      data[key] = value
-        .slice(1, -1)
-        .split(',')
-        .map((s) => s.trim().replace(/^['"]|['"]$/g, ''))
-        .filter(Boolean);
-    } else {
-      data[key] = value.replace(/^['"]|['"]$/g, '');
+  if (parsed && typeof parsed === 'object') {
+    for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+      if (Array.isArray(value)) {
+        data[key] = value.map((v) => String(v));
+      } else if (value !== null && value !== undefined) {
+        data[key] = value instanceof Date ? value.toISOString().slice(0, 10) : String(value);
+      }
     }
-  });
+  }
 
   return { data, content: match[2].trim() };
 }
