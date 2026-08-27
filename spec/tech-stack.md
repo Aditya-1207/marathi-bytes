@@ -31,6 +31,8 @@ Content is **not** stored in a database. It's Markdown files with YAML frontmatt
 
 **Decap CMS** (`client/public/admin/`) — a git-backed headless CMS. It gives a non-technical author a web form that commits Markdown files with correct frontmatter directly to this repo via the GitHub API, so the content model above stays the single source of truth. Configured for the `Aditya-1207/marathi-bytes` repo, `main` branch; supports local testing without OAuth via `local_backend: true` + `npx decap-server`.
 
+**Production auth** — a Cloudflare Worker (`oauth-proxy/`, deployed separately from the main site) proxies GitHub's OAuth token exchange, since the client secret can't live in the browser. The author logs in with a dedicated GitHub account through GitHub's own screen (not Google sign-in — see `spec.md` Phase 2 for why). See `oauth-proxy/README.md` for deployment and `AUTHORING.md` for the author-facing walkthrough.
+
 ## Backend (present, not load-bearing)
 
 These exist because the project was scaffolded from a generic Replit full-stack template. Nothing in the current app actually depends on them — the site is fully static once built:
