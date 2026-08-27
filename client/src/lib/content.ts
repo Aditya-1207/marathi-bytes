@@ -26,6 +26,14 @@ const CATEGORY_DEFAULT_THUMBNAILS: Record<string, string> = {
   instagram: '/blog-images/cultural_celebration_thumbnail.png',
 };
 
+// Content and the CMS author root-relative paths (e.g. "/blog-images/x.png"),
+// but the production build is served from a subpath (see `base` in vite.config.ts),
+// so root-relative paths must be rebased onto it.
+function resolveAssetPath(assetPath: string): string {
+  if (/^([a-z][a-z0-9+.-]*:)?\/\//i.test(assetPath)) return assetPath; // absolute URL
+  return import.meta.env.BASE_URL.replace(/\/$/, '') + '/' + assetPath.replace(/^\//, '');
+}
+
 function parseFrontmatter(raw: string): { data: Record<string, string | string[]>; content: string } {
   const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
   if (!match) return { data: {}, content: raw.trim() };
@@ -103,10 +111,11 @@ function buildPosts(): Post[] {
         category,
         categoryLabel: CATEGORY_LABELS[category] ?? category,
         date: typeof data.date === 'string' ? data.date : '2025-01-01',
-        thumbnail:
+        thumbnail: resolveAssetPath(
           typeof data.thumbnail === 'string' && data.thumbnail
             ? data.thumbnail
             : (CATEGORY_DEFAULT_THUMBNAILS[category] ?? ''),
+        ),
         tags: Array.isArray(data.tags) ? data.tags : [],
       });
     }
