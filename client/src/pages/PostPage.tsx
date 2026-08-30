@@ -8,6 +8,7 @@ import Header from '@/components/Header';
 import CategoryBadge from '@/components/CategoryBadge';
 import TagPill from '@/components/TagPill';
 import ContentCard from '@/components/ContentCard';
+import LatestPosts from '@/components/LatestPosts';
 import SiteFooter from '@/components/SiteFooter';
 import { getPostById, getPostsByCategory } from '@/lib/content';
 import { useDocumentMeta } from '@/hooks/use-document-meta';
@@ -146,7 +147,7 @@ export default function PostPage() {
         </Card>
 
         {relatedPosts.length > 0 && (
-          <div>
+          <div className="mb-12">
             <h2 className="text-2xl md:text-3xl font-bold font-serif mb-6" data-testid="related-posts-heading">
               More from {post.categoryLabel}
             </h2>
@@ -157,6 +158,13 @@ export default function PostPage() {
             </div>
           </div>
         )}
+
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold font-serif mb-6" data-testid="latest-posts-heading">
+            ताज्या पोस्ट्स (Latest Everywhere)
+          </h2>
+          <LatestPosts excludeId={post.id} />
+        </div>
       </article>
 
       <SiteFooter />
