@@ -8,32 +8,27 @@ import ContentCard from '@/components/ContentCard';
 import AboutSection from '@/components/AboutSection';
 import SocialMediaSection from '@/components/SocialMediaSection';
 import { getAllPosts, getPaginatedPosts } from '@/lib/content';
+import { CATEGORIES as categories } from '@/lib/categories';
 import heroImage from '@assets/generated_images/dance_performance_hero_image.png';
 import poetryImage from '@assets/generated_images/poetry_calligraphy_thumbnail.png';
 import cultureImage from '@assets/generated_images/cultural_celebration_thumbnail.png';
 import profileImage from '@assets/generated_images/about_section_portrait.png';
 
-const categories = [
-  { id: 'poetry', name: 'Poetry', label: 'काव्य-संग्रह' },
-  { id: 'articles', name: 'Articles', label: 'आठवणींचा ठेवा' },
-  { id: 'ukhane', name: 'Ukhane', label: 'उखाणे' },
-];
-
+// Visual-only hero imagery. These slides previously carried "View on Instagram"
+// links to placeholder post URLs that did not exist; the links are gone rather
+// than pointing readers at a 404. See spec.md Phase 3.
 const carouselSlides = [
   {
     image: heroImage,
     caption: 'नृत्य - माझे जीवन (Dance - My Life)',
-    instagramLink: 'https://instagram.com/p/example1',
   },
   {
     image: poetryImage,
     caption: 'शब्दांच्या माळा (Garland of Words)',
-    instagramLink: 'https://instagram.com/p/example2',
   },
   {
     image: cultureImage,
     caption: 'संस्कृतीचा रंग (Colors of Culture)',
-    instagramLink: 'https://instagram.com/p/example3',
   },
 ];
 

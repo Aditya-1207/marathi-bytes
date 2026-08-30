@@ -1,4 +1,5 @@
 import { load as parseYaml } from 'js-yaml';
+import { getCategory } from './categories';
 
 export interface Post {
   id: string;
@@ -11,20 +12,6 @@ export interface Post {
   thumbnail: string;
   tags: string[];
 }
-
-const CATEGORY_LABELS: Record<string, string> = {
-  poetry: 'काव्य-संग्रह',
-  articles: 'आठवणींचा ठेवा',
-  ukhane: 'उखाणे',
-  instagram: 'Instagram',
-};
-
-const CATEGORY_DEFAULT_THUMBNAILS: Record<string, string> = {
-  poetry: '/blog-images/poetry_calligraphy_thumbnail.png',
-  articles: '/blog-images/articles_nature_thumbnail.png',
-  ukhane: '/blog-images/ukhane_wedding_thumbnail.png',
-  instagram: '/blog-images/cultural_celebration_thumbnail.png',
-};
 
 // Content and the CMS author root-relative paths (e.g. "/blog-images/x.png"),
 // but the production build is served from a subpath (see `base` in vite.config.ts),
@@ -72,17 +59,10 @@ const ukhaneFiles = import.meta.glob('../content/ukhane/*.md', {
   eager: true,
 }) as Record<string, string>;
 
-const instagramFiles = import.meta.glob('../content/instagram/*.md', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-}) as Record<string, string>;
-
 const ALL_FILES: Array<{ category: string; files: Record<string, string> }> = [
   { category: 'poetry', files: poetryFiles },
   { category: 'articles', files: articleFiles },
   { category: 'ukhane', files: ukhaneFiles },
-  { category: 'instagram', files: instagramFiles },
 ];
 
 function buildPosts(): Post[] {
@@ -109,12 +89,12 @@ function buildPosts(): Post[] {
         excerpt,
         content,
         category,
-        categoryLabel: CATEGORY_LABELS[category] ?? category,
+        categoryLabel: getCategory(category)?.label ?? category,
         date: typeof data.date === 'string' ? data.date : '2025-01-01',
         thumbnail: resolveAssetPath(
           typeof data.thumbnail === 'string' && data.thumbnail
             ? data.thumbnail
-            : (CATEGORY_DEFAULT_THUMBNAILS[category] ?? ''),
+            : (getCategory(category)?.defaultThumbnail ?? ''),
         ),
         tags: Array.isArray(data.tags) ? data.tags : [],
       });

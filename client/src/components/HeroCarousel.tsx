@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 interface Slide {
   image: string;
   caption?: string;
-  instagramLink?: string;
 }
 
 interface HeroCarouselProps {
@@ -74,18 +73,6 @@ export default function HeroCarousel({ slides, autoPlayInterval = 5000 }: HeroCa
                 {slide.caption}
               </p>
             </div>
-          )}
-          
-          {slide.instagramLink && (
-            <a
-              href={slide.instagramLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="absolute bottom-6 right-6 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"
-              data-testid="carousel-instagram-link"
-            >
-              View on Instagram →
-            </a>
           )}
         </div>
       ))}
