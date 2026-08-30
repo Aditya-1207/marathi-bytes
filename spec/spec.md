@@ -13,9 +13,9 @@ Anything not listed here should be checked against `mission.md`'s non-goals befo
 
 ## Current state
 
-The site is a client-rendered React SPA. Content is authored as Markdown with YAML frontmatter under `client/src/content/{poetry,articles,ukhane,instagram}/` and compiled into the JS bundle at build time — there is no runtime database or API. A Decap CMS instance at `/admin` gives the author a web form for creating and editing posts; it is verified working end-to-end, but only against a local git backend. See `CLAUDE.md` for full architecture detail.
+The site is a client-rendered React SPA, live at https://Aditya-1207.github.io/marathi-bytes/. Content is authored as Markdown with YAML frontmatter under `client/src/content/{poetry,articles,ukhane,instagram}/` and compiled into the JS bundle at build time — there is no runtime database or API. A Decap CMS instance at `/admin` gives the author a web form for creating and editing posts, authenticated in production via a GitHub OAuth App and a Cloudflare Worker proxy (`oauth-proxy/`) — verified end-to-end with a real published post. See `CLAUDE.md` for full architecture detail.
 
-Two gaps define everything below: **nothing is deployed to a public URL**, and **the self-service authoring flow only works when someone runs the local test proxy by hand** — which is the opposite of the mission's core promise.
+Phases 1 and 2 are done: the site is public, and the author can self-publish from a browser with no terminal and no help. The remaining gaps are the ones covered in Phases 3 onward below.
 
 ## Phase overview
 
@@ -54,25 +54,25 @@ Today `vite.config.ts` sets no `base` path and there is no deploy workflow, so n
 
 ---
 
-## Phase 2 — Production authoring · Core
+## Phase 2 — Production authoring · Core · ✅ Done
 
 **Functionality served:** the author can publish a new poem herself, from a browser, with no terminal and no help. This is the single most load-bearing promise in `mission.md`.
 
-Today `client/public/admin/config.yml` runs with `local_backend: true`, meaning the CMS only works when someone runs `npx decap-server` alongside the dev server. The GitHub backend it points at has no OAuth path.
+Decap CMS at `/admin` now authenticates in production via a GitHub OAuth App and a Cloudflare Worker proxy (`oauth-proxy/`, deployed at `https://marathibytes-decap-oauth.kulkarni-aditya12.workers.dev`). The author has her own GitHub account with push access to `Aditya-1207/marathi-bytes` and has published a real post end-to-end: logged in at `/admin`, created and published a poem, the commit landed on `main`, the deploy workflow rebuilt the site, and the post appeared live.
 
 **Decision (2026-08-20):** the author (Aditya's wife) will use a dedicated GitHub account, tied to a dedicated Gmail kept separate from her personal one, and log in through GitHub's own screen — not a "Sign in with Google" button. The alternative (Netlify Identity + Git Gateway, which does offer literal Google sign-in) was ruled out to avoid depending on a second hosting platform just for auth. See `AUTHORING.md` for what she'll actually see.
 
 **Tasks**
 
-1. **Register a GitHub OAuth App** for the production domain. Purpose: give Decap a real identity to authenticate the author against the `Aditya-1207/marathi-bytes` repo. *(Manual step — needs a human in the GitHub UI; instructions in `oauth-proxy/README.md`.)*
-2. **Deploy the auth proxy.** Purpose: Decap's GitHub backend needs a small server-side token exchange; built as a Cloudflare Worker in `oauth-proxy/` — this is the one piece that cannot be static. *(Code written; deploying it needs a Cloudflare account — see `oauth-proxy/README.md`.)*
-3. **Point the CMS at the proxy.** Purpose: update `config.yml` with the proxy's `base_url`/`auth_endpoint`. *(Done in `config.yml`, but the placeholder `base_url` needs the real `workers.dev` URL once task 2 is deployed.)*
+1. **Register a GitHub OAuth App** for the production domain. Purpose: give Decap a real identity to authenticate the author against the `Aditya-1207/marathi-bytes` repo. *(Done — `MarathiBytes CMS` OAuth App registered, callback URL points at the Worker.)*
+2. **Deploy the auth proxy.** Purpose: Decap's GitHub backend needs a small server-side token exchange; built as a Cloudflare Worker in `oauth-proxy/` — this is the one piece that cannot be static. *(Done — deployed as `marathibytes-decap-oauth` on the `kulkarni-aditya12.workers.dev` subdomain, with `GITHUB_OAUTH_CLIENT_ID`, `GITHUB_OAUTH_CLIENT_SECRET`, and `OAUTH_STATE_SECRET` set as Worker secrets.)*
+3. **Point the CMS at the proxy.** Purpose: update `config.yml` with the proxy's `base_url`/`auth_endpoint`. *(Done — `base_url` set to the real Worker URL and merged to `main`.)*
 4. **Confirm `local_backend` behaviour is correct for both modes.** Purpose: make sure local testing still works without the local flag hijacking the production login. *(Confirmed: Decap only engages the local proxy when the CMS is loaded from `localhost`, so `local_backend: true` is inert in production — no code change needed, documented in `config.yml`.)*
-5. **Add the author as a repo collaborator.** Purpose: Decap commits using the author's own OAuth token, so her GitHub account needs push access to this repo. *(Manual step — Settings → Collaborators; see `oauth-proxy/README.md`.)*
-6. **Walk a full publish cycle in production.** Purpose: log in at `/admin`, create a post, edit it, confirm the commit lands on `main` and the change appears on the live site after deploy — end-to-end proof, not component-level confidence.
+5. **Add the author as a repo collaborator.** Purpose: Decap commits using the author's own OAuth token, so her GitHub account needs push access to this repo. *(Done — added via Settings → Collaborators, invite accepted.)*
+6. **Walk a full publish cycle in production.** Purpose: log in at `/admin`, create a post, edit it, confirm the commit lands on `main` and the change appears on the live site after deploy — end-to-end proof, not component-level confidence. *(Done — verified with a real published poem.)*
 7. **Write a short authoring guide for the author.** Purpose: a non-developer needs to know the URL, the login step, and what "wait for it to appear" means; without this the flow is technically working but practically unusable. *(Done — `AUTHORING.md`.)*
 
-**Done when:** the author publishes a post start to finish without anyone else touching a terminal.
+**Done when:** the author publishes a post start to finish without anyone else touching a terminal. ✅ Confirmed 2026-08-30.
 
 ---
 
