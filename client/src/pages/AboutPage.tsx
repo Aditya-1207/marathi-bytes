@@ -5,10 +5,16 @@ import Header from '@/components/Header';
 import AboutSection from '@/components/AboutSection';
 import SocialMediaSection from '@/components/SocialMediaSection';
 import SiteFooter from '@/components/SiteFooter';
+import { useDocumentMeta } from '@/hooks/use-document-meta';
 import profileImage from '@assets/generated_images/about_section_portrait.png';
 
 export default function AboutPage() {
   const [, setLocation] = useLocation();
+
+  useDocumentMeta({
+    title: 'माझ्याबद्दल (About)',
+    description: 'मी प्राजक्तप्रभा. लेखन, नृत्य आणि गायन हे माझे आवडते छंद आहेत — माझ्याबद्दल अधिक जाणून घ्या.',
+  });
 
   return (
     <div className="min-h-screen bg-background" style={{ paddingTop: 'var(--header-height, 200px)' }}>

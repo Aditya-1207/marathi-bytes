@@ -1,44 +1,6 @@
-import { load as parseYaml } from 'js-yaml';
-import { getCategory } from './categories';
+import { parsePosts, type CategoryFiles, type Post } from './posts';
 
-export interface Post {
-  id: string;
-  title: string;
-  excerpt: string;
-  content: string;
-  category: string;
-  categoryLabel: string;
-  date: string;
-  thumbnail: string;
-  tags: string[];
-}
-
-// Content and the CMS author root-relative paths (e.g. "/blog-images/x.png"),
-// but the production build is served from a subpath (see `base` in vite.config.ts),
-// so root-relative paths must be rebased onto it.
-function resolveAssetPath(assetPath: string): string {
-  if (/^([a-z][a-z0-9+.-]*:)?\/\//i.test(assetPath)) return assetPath; // absolute URL
-  return import.meta.env.BASE_URL.replace(/\/$/, '') + '/' + assetPath.replace(/^\//, '');
-}
-
-function parseFrontmatter(raw: string): { data: Record<string, string | string[]>; content: string } {
-  const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
-  if (!match) return { data: {}, content: raw.trim() };
-
-  const parsed = parseYaml(match[1]);
-  const data: Record<string, string | string[]> = {};
-  if (parsed && typeof parsed === 'object') {
-    for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
-      if (Array.isArray(value)) {
-        data[key] = value.map((v) => String(v));
-      } else if (value !== null && value !== undefined) {
-        data[key] = value instanceof Date ? value.toISOString().slice(0, 10) : String(value);
-      }
-    }
-  }
-
-  return { data, content: match[2].trim() };
-}
+export type { Post };
 
 // Vite glob — patterns must be static strings
 const poetryFiles = import.meta.glob('../content/poetry/*.md', {
@@ -59,66 +21,24 @@ const ukhaneFiles = import.meta.glob('../content/ukhane/*.md', {
   eager: true,
 }) as Record<string, string>;
 
-const ALL_FILES: Array<{ category: string; files: Record<string, string> }> = [
+const ALL_FILES: CategoryFiles[] = [
   { category: 'poetry', files: poetryFiles },
   { category: 'articles', files: articleFiles },
   { category: 'ukhane', files: ukhaneFiles },
 ];
 
-function buildPosts(): Post[] {
-  const posts: Post[] = [];
-
-  for (const { category, files } of ALL_FILES) {
-    for (const [path, raw] of Object.entries(files)) {
-      const filename = path.split('/').pop() ?? '';
-      const id = filename.replace(/\.md$/, '');
-
-      // Skip placeholder README
-      if (id.toLowerCase() === 'readme') continue;
-
-      const { data, content } = parseFrontmatter(raw);
-
-      const excerpt =
-        typeof data.excerpt === 'string' && data.excerpt
-          ? data.excerpt
-          : content.replace(/[#*_`>]/g, '').slice(0, 160).trimEnd() + '…';
-
-      posts.push({
-        id,
-        title: typeof data.title === 'string' ? data.title : id,
-        excerpt,
-        content,
-        category,
-        categoryLabel: getCategory(category)?.label ?? category,
-        date: typeof data.date === 'string' ? data.date : '2025-01-01',
-        thumbnail: resolveAssetPath(
-          typeof data.thumbnail === 'string' && data.thumbnail
-            ? data.thumbnail
-            : (getCategory(category)?.defaultThumbnail ?? ''),
-        ),
-        tags: Array.isArray(data.tags) ? data.tags : [],
-      });
-    }
-  }
-
-  // Latest first
-  return posts.sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-  );
-}
-
 export const POSTS_PER_PAGE = 10;
 
 export function getAllPosts(): Post[] {
-  return buildPosts();
+  return parsePosts(ALL_FILES, import.meta.env.BASE_URL);
 }
 
 export function getPostsByCategory(category: string): Post[] {
-  return buildPosts().filter((p) => p.category === category);
+  return getAllPosts().filter((p) => p.category === category);
 }
 
 export function getPostById(id: string): Post | undefined {
-  return buildPosts().find((p) => p.id === id);
+  return getAllPosts().find((p) => p.id === id);
 }
 
 export function getPaginatedPosts(posts: Post[], page: number) {

@@ -6,6 +6,7 @@ import PostGrid from '@/components/PostGrid';
 import SiteFooter from '@/components/SiteFooter';
 import { getPostsByCategory } from '@/lib/content';
 import { CATEGORIES as categories } from '@/lib/categories';
+import { useDocumentMeta } from '@/hooks/use-document-meta';
 
 export default function CategoryPage() {
   const params = useParams<{ category: string }>();
@@ -13,6 +14,13 @@ export default function CategoryPage() {
 
   const categoryId = params.category ?? '';
   const currentCategory = categories.find((c) => c.id === categoryId);
+
+  useDocumentMeta({
+    title: currentCategory?.label ?? 'Category Not Found',
+    description: currentCategory
+      ? `${currentCategory.label} - प्राजक्तप्रभा वरील ${currentCategory.name} वाचा.`
+      : 'This category could not be found.',
+  });
 
   if (!currentCategory) {
     return (

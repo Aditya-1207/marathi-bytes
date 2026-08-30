@@ -5,6 +5,7 @@ import AboutSection from '@/components/AboutSection';
 import SocialMediaSection from '@/components/SocialMediaSection';
 import SiteFooter from '@/components/SiteFooter';
 import { getAllPosts } from '@/lib/content';
+import { useDocumentMeta } from '@/hooks/use-document-meta';
 import heroImage from '@assets/generated_images/dance_performance_hero_image.png';
 import poetryImage from '@assets/generated_images/poetry_calligraphy_thumbnail.png';
 import cultureImage from '@assets/generated_images/cultural_celebration_thumbnail.png';
@@ -30,6 +31,11 @@ const carouselSlides = [
 
 export default function HomePage() {
   const allPosts = getAllPosts();
+
+  useDocumentMeta({
+    title: 'Home',
+    description: 'प्राजक्तप्रभा - A creative blog showcasing Marathi poetry, dance, and cultural expression. Explore original काव्य, articles, and उखाणे.',
+  });
 
   return (
     <div className="min-h-screen bg-background" style={{ paddingTop: 'var(--header-height, 200px)' }}>

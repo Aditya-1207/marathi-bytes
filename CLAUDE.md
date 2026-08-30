@@ -9,7 +9,9 @@ Before planning new work, also read `spec/mission.md` (why this project exists a
 ```
 npm install       # install dependencies
 npm run dev        # start dev server (Vite middleware + Express) on PORT env var, default 5000
-npm run build       # vite build (client) + esbuild bundle of server/index-prod.ts into dist/index.js
+npm run build       # vite build (client) + esbuild bundle of server/index-prod.ts into dist/index.js, then the two scripts below
+npm run prerender    # scripts/prerender-posts.ts alone — bakes per-post OG/Twitter tags into dist/public/post/<slug>/index.html; needs a prior `vite build`
+npm run rss          # scripts/generate-rss.ts alone — writes dist/public/rss.xml; needs a prior `vite build`
 npm start           # run the production build (requires npm run build first)
 npm run check        # tsc --noEmit type-check across client/server/shared
 npm run db:push      # drizzle-kit push — pushes shared/schema.ts to DATABASE_URL (schema is currently unused by the app; see below)
@@ -22,7 +24,9 @@ There is no test suite/framework configured in this repo.
 This is a **client-rendered SPA blog**, not a traditional full-stack app, despite the Express scaffold. It was originally scaffolded on Replit (see `.replit`, the `@replit/vite-plugin-*` devDependencies).
 
 **Content model — this is the core thing to understand:**
-Posts are markdown files with YAML frontmatter under `client/src/content/{poetry,articles,ukhane}/*.md`. `client/src/lib/content.ts` loads *all* of them at build/bundle time via `import.meta.glob(..., { eager: true })` — there is no runtime fetch, no CMS API, no database read. Frontmatter is parsed with `js-yaml` (not a hand-rolled parser — it must stay a real YAML parser since content can come from the CMS below, which emits multi-line YAML lists). The filename (minus `.md`) becomes the post's URL slug (`/post/<slug>`); the containing folder becomes its category. A fourth `instagram` category once existed in the loader without any route or nav entry; it was removed in Phase 3 — social media is a link out from this site, never a feed pulled in (see `spec/spec.md` Phase 3 for the reasoning).
+Posts are markdown files with YAML frontmatter under `client/src/content/{poetry,articles,ukhane}/*.md`. Frontmatter is parsed with `js-yaml` (not a hand-rolled parser — it must stay a real YAML parser since content can come from the CMS below, which emits multi-line YAML lists). The filename (minus `.md`) becomes the post's URL slug (`/post/<slug>`); the containing folder becomes its category. A fourth `instagram` category once existed in the loader without any route or nav entry; it was removed in Phase 3 — social media is a link out from this site, never a feed pulled in (see `spec/spec.md` Phase 3 for the reasoning).
+
+Post parsing itself lives in `client/src/lib/posts.ts` (`parsePosts`, `parseFrontmatter`, `resolveAssetPath`) and is deliberately environment-agnostic — no `import.meta.glob`, no `import.meta.env`. `client/src/lib/content.ts` is a thin Vite wrapper: it supplies the actual file contents via `import.meta.glob(..., { eager: true })` and calls `parsePosts()`. The `scripts/` build scripts (below) supply files via plain `fs.readdirSync` instead and call the exact same `parsePosts()` — one implementation of frontmatter parsing and excerpt derivation, not two that can quietly drift, the same discipline Phase 3 applied to category labels.
 
 **Routing (`client/src/App.tsx`)** uses `wouter`, client-side only: `/`, `/category/:category`, `/post/:id`, `/search`, `/tag/:tag`, `/about`.
 
@@ -35,6 +39,17 @@ Search and tag browsing are backed by `client/src/lib/search.ts`, which builds a
 `Header` takes no props — it reads `CATEGORIES` itself and performs its own search navigation, so a new page just renders `<Header />`. `TagPill` is a `<Link>`, not a click handler, so every tag on the site navigates by construction. `PostGrid` (card grid + pagination + empty state) and `SiteFooter` are shared by the home, category, search, and tag pages.
 
 Categories are defined once in `client/src/lib/categories.ts` (`CATEGORIES`, plus a `getCategory(id)` lookup) and consumed by both the pages and `content.ts` — adding or renaming a category is a single edit there. Social links are centralized the same way in `client/src/lib/social.ts`, read by both `Header.tsx` and `SocialMediaSection.tsx`.
+
+**Per-post share previews and the RSS feed (`spec/spec.md` Phases 5 & 7) are two faces of the same build-time-content problem**, which is why they share `posts.ts`/`parsePosts()` and a `scripts/` directory:
+
+- `client/src/hooks/use-document-meta.ts` (`useDocumentMeta`) sets `document.title` and the OG/Twitter/canonical meta tags client-side, on every route — this is what makes the browser tab title (and any live-session share sniffing) reflect the actual page, since wouter never reloads the document. It does **not** help a WhatsApp/Facebook scraper: those fetch raw HTML and never execute JS, so DOM changes made here are invisible to them.
+- `scripts/prerender-posts.ts` runs after `vite build` and is what actually solves the crawler problem: for each post it clones the built `index.html` and swaps in that post's OG/Twitter values via targeted string replacement (no DOM/HTML parser dependency — the exact tag shapes are ones this project controls, and Vite is confirmed to pass meta tag values through unmodified), writing `dist/public/post/<slug>/index.html`. Reachable at `/post/<slug>` because GitHub Pages 301-redirects that (no trailing slash) to `/post/<slug>/` and serves its `index.html` — the standard mechanism Jekyll/Hugo rely on for pretty URLs.
+- `scripts/generate-rss.ts` writes `dist/public/rss.xml`, a summary feed (excerpt, not full body — full-text would need a real Markdown→HTML pass, deliberately not built on `react-markdown`'s undeclared transitive `remark`/`rehype` dependency).
+- `scripts/read-content-files.ts` is the Node-side equivalent of `content.ts`'s `import.meta.glob` calls, reusing `CATEGORIES` from `categories.ts` rather than hardcoding the category list a third time.
+- Both scripts, plus `useDocumentMeta`, read shared constants from `client/src/lib/seo.ts` (`SITE_URL`, `postUrl()`, `absoluteUrl()`) — `SITE_BASE_PATH` there must be kept in sync with `vite.config.ts`'s production `base` by hand, since a plain Node script can't import `vite.config.ts` without pulling in Vite/Replit-only code.
+- `npm run build` and `.github/workflows/deploy.yml` both run `vite build` then these two scripts, in that order — the scripts read `dist/public/index.html`, so they cannot run first.
+
+`client/src/lib/reading-time.ts` (`estimateReadingTime`) is unrelated to the above — a per-post word-count estimate shown on `PostPage.tsx`. It uses `Intl.Segmenter('mr', { granularity: 'word' })` rather than a `\w+`/`\b`-based regex, since `\w` in JS only matches `[A-Za-z0-9_]` and would silently undercount Devanagari text to near zero.
 
 **Content authoring via Decap CMS:** `client/public/admin/` (`config.yml` + `index.html`) is a Decap CMS instance that gives non-technical editors a web form to create/edit posts, which commits directly to the `client/src/content/*` folders via the GitHub API (`backend.repo: Aditya-1207/marathi-bytes`, branch `main`). `local_backend: true` lets you test the CMS without OAuth by running `npx decap-server` alongside `npm run dev`, then visiting `/admin/index.html` (note: in dev mode, `/admin/` without the filename 404s — see server note below; this isn't an issue in the production static build).
 

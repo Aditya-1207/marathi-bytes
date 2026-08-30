@@ -6,6 +6,7 @@ import PostGrid from '@/components/PostGrid';
 import SiteFooter from '@/components/SiteFooter';
 import TagPill from '@/components/TagPill';
 import { getPostsByTag, getAllTags, decodeRouteParam } from '@/lib/search';
+import { useDocumentMeta } from '@/hooks/use-document-meta';
 
 export default function TagPage() {
   const params = useParams<{ tag: string }>();
@@ -14,6 +15,11 @@ export default function TagPage() {
   const tag = decodeRouteParam(params.tag ?? '').trim();
   const posts = getPostsByTag(tag);
   const allTags = getAllTags();
+
+  useDocumentMeta({
+    title: `#${tag}`,
+    description: `"${tag}" टॅग असलेल्या ${posts.length} पोस्ट.`,
+  });
 
   return (
     <div className="min-h-screen bg-background" style={{ paddingTop: 'var(--header-height, 200px)' }}>

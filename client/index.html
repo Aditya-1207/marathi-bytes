@@ -4,9 +4,26 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
     <meta name="description" content="प्राजक्तप्रभा - A creative blog showcasing Marathi poetry, dance, and cultural expression. Explore original काव्य, articles, and उखाणे." />
+    <!--
+      Site-level share-preview defaults. Post pages get their own values two
+      ways: client-side via useDocumentMeta (for a live SPA session) and, for
+      crawlers that don't run JS, baked into a static file per post by
+      scripts/prerender-posts.ts. The literal URLs below must stay in sync
+      with client/src/lib/seo.ts's SITE_URL/DEFAULT_OG_IMAGE constants — this
+      file is static markup, so it can't import them.
+    -->
+    <meta property="og:site_name" content="प्राजक्तप्रभा" />
     <meta property="og:title" content="प्राजक्तप्रभा - Marathi Creative Blog" />
     <meta property="og:description" content="Welcome to my blog, where I share my poetry, passion for dance, and more." />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://Aditya-1207.github.io/marathi-bytes/" />
+    <meta property="og:image" content="https://Aditya-1207.github.io/marathi-bytes/blog-images/about_section_portrait.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="प्राजक्तप्रभा - Marathi Creative Blog" />
+    <meta name="twitter:description" content="Welcome to my blog, where I share my poetry, passion for dance, and more." />
+    <meta name="twitter:image" content="https://Aditya-1207.github.io/marathi-bytes/blog-images/about_section_portrait.png" />
+    <link rel="canonical" href="https://Aditya-1207.github.io/marathi-bytes/" />
+    <link rel="alternate" type="application/rss+xml" title="प्राजक्तप्रभा RSS Feed" href="https://Aditya-1207.github.io/marathi-bytes/rss.xml" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
