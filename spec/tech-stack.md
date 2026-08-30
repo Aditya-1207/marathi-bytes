@@ -9,6 +9,7 @@ What's actually running this project, why each piece is here, and — importantl
 | **Vite 5** | Dev server + client build. Client root is `client/`, output goes to `dist/public`. |
 | **TypeScript 5.6** | Used across client, server, and shared code (`tsc --noEmit` via `npm run check`; no separate linter is configured). |
 | **esbuild** | Bundles the production server entry (`server/index-prod.ts`) into `dist/index.js`. |
+| **tsx** | Already a devDependency (runs the dev server); also runs the two build-time scripts under `scripts/` (prerendering, RSS) as plain Node/TypeScript after `vite build` — no new dependency needed for either. |
 
 ## Frontend (this is the actual product)
 
@@ -25,7 +26,11 @@ What's actually running this project, why each piece is here, and — importantl
 
 ## Content model
 
-Content is **not** stored in a database. It's Markdown files with YAML frontmatter under `client/src/content/{poetry,articles,ukhane}/*.md`, loaded eagerly at build time via Vite's `import.meta.glob` (see `client/src/lib/content.ts`) and compiled directly into the JS bundle. There is no content API and no runtime fetch for posts. The category list itself lives in `client/src/lib/categories.ts`, which both the loader and the UI read.
+Content is **not** stored in a database. It's Markdown files with YAML frontmatter under `client/src/content/{poetry,articles,ukhane}/*.md`, loaded eagerly at build time and compiled directly into the JS bundle. There is no content API and no runtime fetch for posts. The category list itself lives in `client/src/lib/categories.ts`, which both the loader and the UI read.
+
+Post parsing (`client/src/lib/posts.ts`) is environment-agnostic on purpose: `client/src/lib/content.ts` supplies files via Vite's `import.meta.glob` for the browser build, and the `scripts/` build-time generators (below) supply files via plain `fs.readdirSync` — both call the same `parsePosts()`, so a post's excerpt/thumbnail/category derivation can't drift between what the site shows and what the RSS feed or a share preview shows.
+
+**Per-post share previews and the RSS feed** (`spec/spec.md` Phases 5 & 7) run as two Node scripts, `scripts/prerender-posts.ts` and `scripts/generate-rss.ts`, invoked after `vite build` by both `npm run build` and `.github/workflows/deploy.yml`. Prerendering exists because social scrapers (WhatsApp, Facebook, Twitter/X) fetch raw HTML and never execute JS — a client-side `useDocumentMeta` hook keeps the live SPA's tab title and meta tags correct per route, but only a real static file per post (`dist/public/post/<slug>/index.html`) is visible to a scraper. No new runtime dependency for either script — both are plain Node/TypeScript via `tsx`, consistent with "no server to babysit."
 
 **No social media integration.** There is no Instagram/YouTube/Facebook API client, widget, embed script, or access token anywhere in this project, and by decision there should not be — see `spec/spec.md` Phase 3. Social platforms are linked to from `client/src/lib/social.ts` and nothing more; that keeps the site free of third-party JS, tracking cookies, and expiring credentials, all of which `mission.md` rules out.
 

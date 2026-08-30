@@ -1,5 +1,5 @@
 import { useLocation, useParams } from 'wouter';
-import { ArrowLeft, Calendar, Facebook, Share2 } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Facebook, Share2 } from 'lucide-react';
 import { SiWhatsapp, SiX } from 'react-icons/si';
 import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,9 @@ import TagPill from '@/components/TagPill';
 import ContentCard from '@/components/ContentCard';
 import SiteFooter from '@/components/SiteFooter';
 import { getPostById, getPostsByCategory } from '@/lib/content';
+import { useDocumentMeta } from '@/hooks/use-document-meta';
+import { postUrl } from '@/lib/seo';
+import { estimateReadingTime } from '@/lib/reading-time';
 
 export default function PostPage() {
   const params = useParams<{ id: string }>();
@@ -36,6 +39,15 @@ export default function PostPage() {
     if (shareUrl) window.open(shareUrl, '_blank', 'width=600,height=400');
   };
 
+  useDocumentMeta({
+    title: post?.title ?? 'Post Not Found',
+    description: post?.excerpt ?? 'This post could not be found.',
+    image: post?.thumbnail,
+    type: post ? 'article' : 'website',
+    publishedTime: post ? new Date(post.date).toISOString() : undefined,
+    url: post ? postUrl(post.id) : undefined,
+  });
+
   if (!post) {
     return (
       <div className="min-h-screen bg-background" style={{ paddingTop: 'var(--header-height, 200px)' }}>
@@ -51,6 +63,8 @@ export default function PostPage() {
   const relatedPosts = getPostsByCategory(post.category)
     .filter((p) => p.id !== post.id)
     .slice(0, 2);
+
+  const readingTime = estimateReadingTime(post.content);
 
   return (
     <div className="min-h-screen bg-background" style={{ paddingTop: 'var(--header-height, 200px)' }}>
@@ -83,6 +97,10 @@ export default function PostPage() {
               month: 'long',
               day: 'numeric',
             })}
+          </div>
+          <div className="flex items-center gap-2" data-testid="post-reading-time">
+            <Clock className="w-4 h-4" />
+            {readingTime} मिनिट वाचन
           </div>
           {post.tags.length > 0 && (
             <div className="flex flex-wrap gap-2" data-testid="post-tags">

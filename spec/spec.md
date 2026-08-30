@@ -15,7 +15,7 @@ Anything not listed here should be checked against `mission.md`'s non-goals befo
 
 The site is a client-rendered React SPA, live at https://Aditya-1207.github.io/marathi-bytes/. Content is authored as Markdown with YAML frontmatter under `client/src/content/{poetry,articles,ukhane}/` and compiled into the JS bundle at build time — there is no runtime database or API. A Decap CMS instance at `/admin` gives the author a web form for creating and editing posts, authenticated in production via a GitHub OAuth App and a Cloudflare Worker proxy (`oauth-proxy/`) — verified end-to-end with a real published post. See `CLAUDE.md` for full architecture detail.
 
-Phases 1 through 4 are done: the site is public, the author can self-publish from a browser with no terminal and no help, the category list lives in one module, and search and tag browsing work. The remaining gaps are the ones covered in Phases 5 onward below.
+Phases 1 through 4 and 7 are done: the site is public, the author can self-publish from a browser with no terminal and no help, the category list lives in one module, search and tag browsing work, posts show a reading time, and an RSS feed exists. Phase 5 (per-post share previews) is implemented and locally verified, with one remaining step — confirming with a real scraper — that's blocked on deployment. The remaining gaps are covered in Phases 6, 8, and 9 below.
 
 ## Phase overview
 
@@ -136,21 +136,23 @@ A curated, author-owned highlights grid — image, caption and permalink stored 
 
 ---
 
-## Phase 5 — Per-post share previews · Core
+## Phase 5 — Per-post share previews · Core · Implemented, pending live verification
 
 **Functionality served:** when a reader shares a poem to WhatsApp or Facebook, the preview shows *that poem* — its title, its excerpt, its image.
 
-`PostPage` offers Facebook, Twitter, and WhatsApp share buttons, but `client/index.html` carries a single static `og:title` and `og:description` for the entire site, with **no `og:image` and no `og:url` at all**. Every shared link therefore previews as the generic homepage. This directly contradicts "share it in a way that actually represents that poem" in `mission.md`.
+`PostPage` offered Facebook, Twitter, and WhatsApp share buttons, but `client/index.html` carried a single static `og:title` and `og:description` for the entire site, with no `og:image` and no `og:url` at all. Every shared link previewed as the generic homepage — contradicting "share it in a way that actually represents that poem" in `mission.md`.
 
 **Tasks**
 
-1. **Add per-route document metadata.** Purpose: a small mechanism to set `<title>` and OG/Twitter meta tags from route data, applied at minimum to the post route.
-2. **Feed post frontmatter into the tags.** Purpose: map title, excerpt, thumbnail, and canonical URL onto `og:title`, `og:description`, `og:image`, `og:url`, and the Twitter card equivalents.
-3. **Fill in the site-level defaults.** Purpose: give `index.html` a proper `og:image` and `og:url` so the homepage and category pages preview well too.
-4. **Address the crawler limitation.** Purpose: social scrapers do not execute JavaScript, so client-injected tags are invisible to them. Decide and implement the fix — prerendering post routes at build time is the smallest option that actually works for a static host. Without this task the previous three are cosmetic.
-5. **Verify with a real scraper.** Purpose: check a live post URL through a social preview debugger; a local DOM inspection proves nothing about what Facebook sees.
+1. **Add per-route document metadata.** *(Done — `client/src/hooks/use-document-meta.ts`. Applied to all six routes, not just the post route: without this, `document.title` never changed across client-side navigation at all, since wouter routes without a page reload — a real, separate bug this closes as a side effect.)*
+2. **Feed post frontmatter into the tags.** *(Done — `PostPage.tsx` passes `title`, `excerpt`, `thumbnail`, `type: 'article'`, `publishedTime`, and `postUrl(post.id)` into the hook, which sets `og:*`, `twitter:*`, and `<link rel="canonical">`.)*
+3. **Fill in the site-level defaults.** *(Done — `client/index.html` now carries `og:site_name`, `og:image`, `og:url`, the `twitter:*` equivalents, and a canonical link, for every route that isn't a post.)*
+4. **Address the crawler limitation.** *(Done — `scripts/prerender-posts.ts`, run after `vite build`. Scrapers don't execute JS, so `useDocumentMeta`'s DOM updates are invisible to them; this script bakes the same values into a real static file per post — `dist/public/post/<slug>/index.html` — by cloning the built `index.html` and substituting meta tag values via targeted string replacement, no DOM/HTML parser dependency. Reachable at `/post/<slug>` because GitHub Pages 301-redirects that (no trailing slash) to `/post/<slug>/`, then serves its `index.html` — confirmed against GitHub Pages' documented directory-index behaviour, the same mechanism Jekyll/Hugo rely on for pretty URLs. `postUrl()` already returns the trailing-slash form, so the canonical/og:url values never depend on that redirect actually firing.)*
+5. **Verify with a real scraper.** *(Not yet done — needs the live production URL, which only exists after this merges and the deploy workflow runs. Locally verified instead: `npm run build` produces well-formed per-post HTML with correct `og:title`/`og:description`/`og:image`/`og:url`/`article:published_time` for all 7 current posts, inspected directly; a Devanagari-titled post — `भेट`, slug `20250829-भेट` — correctly percent-encodes into its URL. Once live, run the real post URL through Facebook's Sharing Debugger and Twitter's Card Validator to confirm what a scraper actually sees — a local build inspection is evidence, not proof.)*
 
-**Done when:** pasting a post URL into WhatsApp shows that post's title and image.
+**Incidental fix:** deriving a post's `excerpt` when no frontmatter `excerpt` exists (`client/src/lib/posts.ts`) preserved raw newlines from the markdown body. Harmless in a CSS-wrapped card, but it landed literally inside a meta tag's `content="..."` attribute once excerpts started being used for share previews. Now collapsed to single spaces regardless of source (frontmatter or derived) — also a small quality improvement to how excerpts render on cards.
+
+**Done when:** pasting a post URL into WhatsApp shows that post's title and image. Mechanically verified locally; real-scraper confirmation is the one remaining step, blocked on deployment.
 
 ---
 
@@ -175,17 +177,21 @@ Two findings from the Phase 3 audit sharpen this:
 
 ---
 
-## Phase 7 — Reader conveniences · Polish
+## Phase 7 — Reader conveniences · Polish · ✅ Done
 
 **Functionality served:** two small things readers expect, both already backed by data the site has.
 
+Built together with Phase 5 — both turned out to need the same underlying move: a build-time script that can parse posts outside the browser. `client/src/lib/content.ts`'s post-parsing logic was extracted into environment-agnostic `client/src/lib/posts.ts` (no `import.meta.glob`, no `import.meta.env`) so both a plain Node script and the Vite-bundled site call exactly one implementation — the same drift Phase 3 eliminated for category labels was just as possible here between the site and a feed generator that parsed posts independently.
+
 **Tasks**
 
-1. **Show a reading-time estimate.** Purpose: `design_guidelines.md` already specifies this in the post metadata bar and `PostPage.tsx` doesn't implement it — closing an agreed design gap. Compute from word count client-side; count Devanagari words correctly rather than assuming whitespace-delimited Latin.
-2. **Generate an RSS feed.** Purpose: let readers follow new poetry and articles without checking back. Posts are already structured and dated, so this is a build-time transform over the same content the site loads.
-3. **Link the feed from the site.** Purpose: an unadvertised feed is an unused feed — add the `<link rel="alternate">` tag and a visible entry point.
+1. **Show a reading-time estimate.** *(Done — `client/src/lib/reading-time.ts`, shown on `PostPage.tsx`'s metadata bar next to the date, matching `design_guidelines.md`'s spec. Counts words via `Intl.Segmenter('mr', { granularity: 'word' })` rather than a naive `\w+`/`\b`-based regex — `\w` in JS only matches `[A-Za-z0-9_]`, so that class of approach silently undercounts Devanagari text to near zero; a plain whitespace split is the fallback for a browser old enough to lack `Intl.Segmenter`. 150 words/minute, documented as an approximation — there's no authoritative Marathi-specific reading-speed figure to use instead.)*
+2. **Generate an RSS feed.** *(Done — `scripts/generate-rss.ts`, run after `vite build`, writes `dist/public/rss.xml`. Standard RSS 2.0, one `<item>` per post with `<title>`/`<link>`/`<guid>`/`<pubDate>`/`<category>`/`<description>` (the excerpt, not the full body — see note below). Locally verified as well-formed XML with all 7 current posts present, in published-date order.)*
+3. **Link the feed from the site.** *(Done — `<link rel="alternate" type="application/rss+xml">` in `client/index.html` for feed-reader auto-discovery, plus a visible "RSS Feed" entry point in `SiteFooter.tsx` (every page) so it isn't only discoverable by tooling.)*
 
-**Done when:** a post shows its reading time, and a feed reader can subscribe to new work.
+**Deliberately out of scope:** `<description>` carries the excerpt, not full post content via `<content:encoded>`. Rendering the current plain-paragraph Markdown as correct feed HTML would need a real Markdown→HTML pass — the underlying `remark`/`rehype` toolchain exists only as a transitive dependency of `react-markdown`, not a declared one, and building on it un-declared is a version-fragile foundation for a real feature. A full-text feed is a reasonable future enhancement if wanted; this is a correct, conventional summary feed instead of an incorrect full-text one.
+
+**Done when:** a post shows its reading time, and a feed reader can subscribe to new work. ✅ Both verified locally — reading time confirmed in the browser (`भेट`, a short poem, correctly shows "1 मिनिट वाचन"); `rss.xml` confirmed well-formed with `python -m xml.dom.minidom`. `npm run check` and `npm run build` pass.
 
 ---
 

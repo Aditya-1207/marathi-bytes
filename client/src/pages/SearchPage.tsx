@@ -6,6 +6,7 @@ import PostGrid from '@/components/PostGrid';
 import SiteFooter from '@/components/SiteFooter';
 import TagPill from '@/components/TagPill';
 import { searchPosts, getAllTags } from '@/lib/search';
+import { useDocumentMeta } from '@/hooks/use-document-meta';
 
 export default function SearchPage() {
   const [, setLocation] = useLocation();
@@ -14,6 +15,13 @@ export default function SearchPage() {
   const query = (new URLSearchParams(searchString).get('q') ?? '').trim();
   const results = searchPosts(query);
   const tags = getAllTags();
+
+  useDocumentMeta({
+    title: query ? `शोध: "${query}"` : 'शोध (Search)',
+    description: query
+      ? `"${query}" साठी ${results.length} निकाल.`
+      : 'प्राजक्तप्रभा वरील कविता, लेख आणि उखाणे शोधा.',
+  });
 
   return (
     <div className="min-h-screen bg-background" style={{ paddingTop: 'var(--header-height, 200px)' }}>
