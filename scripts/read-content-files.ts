@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { CATEGORIES } from '../client/src/lib/categories';
 import type { CategoryFiles } from '../client/src/lib/posts';
@@ -17,9 +17,17 @@ export function readAllContentFiles(): CategoryFiles[] {
     const dir = path.join(CONTENT_ROOT, category);
     const files: Record<string, string> = {};
 
-    for (const filename of readdirSync(dir)) {
-      if (!filename.endsWith('.md')) continue;
-      files[path.join(dir, filename)] = readFileSync(path.join(dir, filename), 'utf-8');
+    // Git doesn't track empty directories, so deleting a category's last
+    // post through Decap removes the folder from the repo entirely — the
+    // next post added back through the CMS recreates it. Vite's
+    // `import.meta.glob` in content.ts tolerates this fine (zero matches,
+    // not an error); `readdirSync` on a missing directory throws, so it
+    // needs the same "zero files" treatment here to match.
+    if (existsSync(dir)) {
+      for (const filename of readdirSync(dir)) {
+        if (!filename.endsWith('.md')) continue;
+        files[path.join(dir, filename)] = readFileSync(path.join(dir, filename), 'utf-8');
+      }
     }
 
     return { category, files };
