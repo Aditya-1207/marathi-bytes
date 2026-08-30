@@ -29,7 +29,7 @@ Posts are markdown files with YAML frontmatter under `client/src/content/{poetry
 
 Post parsing itself lives in `client/src/lib/posts.ts` (`parsePosts`, `parseFrontmatter`, `resolveAssetPath`) and is deliberately environment-agnostic — no `import.meta.glob`, no `import.meta.env`. `client/src/lib/content.ts` is a thin Vite wrapper: it supplies the actual file contents via `import.meta.glob(..., { eager: true })` and calls `parsePosts()`. The `scripts/` build scripts (below) supply files via plain `fs.readdirSync` instead and call the exact same `parsePosts()` — one implementation of frontmatter parsing and excerpt derivation, not two that can quietly drift, the same discipline Phase 3 applied to category labels.
 
-**Routing (`client/src/App.tsx`)** uses `wouter`, client-side only: `/`, `/category/:category`, `/post/:id`, `/search`, `/tag/:tag`, `/about`.
+**Routing (`client/src/App.tsx`)** uses `wouter`, client-side only: `/`, `/category/:category`, `/post/:id`, `/search`, `/tag/:tag`, `/archive`, `/about`.
 
 Search and tag browsing are backed by `client/src/lib/search.ts`, which builds a small in-memory index once (memoized) over the eagerly-loaded corpus rather than re-scanning on every keystroke. Three details there are load-bearing rather than incidental:
 
@@ -40,6 +40,8 @@ Search and tag browsing are backed by `client/src/lib/search.ts`, which builds a
 `Header` takes no props — it reads `CATEGORIES` itself and performs its own search navigation, so a new page just renders `<Header />`. `TagPill` is a `<Link>`, not a click handler, so every tag on the site navigates by construction. `PostGrid` (card grid + pagination + empty state) and `SiteFooter` are shared by the home, category, search, and tag pages.
 
 Categories are defined once in `client/src/lib/categories.ts` (`CATEGORIES`, plus a `getCategory(id)` lookup) and consumed by both the pages and `content.ts` — adding or renaming a category is a single edit there. Social links are centralized the same way in `client/src/lib/social.ts`, read by both `Header.tsx` and `SocialMediaSection.tsx`.
+
+**Discovery beyond the flat feed (Phase 9)** — `ArchivePage.tsx` (`/archive`) groups `getAllPosts()` by year and reuses the same `ContentCard` grid every other listing page uses, deliberately not a new visual pattern. `TagCloud.tsx`, on the homepage, is a genuine weighted cloud (font size scales with each tag's share of `getAllTags()`'s count range) — distinct on purpose from the uniform pill lists on `TagPage`/`SearchPage`, which are exhaustive lists, not an at-a-glance overview. `LatestPosts.tsx` (`count`, `excludeId` props) is placed only on `PostPage`, next to the existing same-category "More from {category}" section — a sitewide "newest everywhere" view is genuinely different information there, whereas putting it on the homepage too would just duplicate that page's own already-newest-first feed.
 
 **Per-post share previews and the RSS feed (`spec/spec.md` Phases 5 & 7) are two faces of the same build-time-content problem**, which is why they share `posts.ts`/`parsePosts()` and a `scripts/` directory:
 

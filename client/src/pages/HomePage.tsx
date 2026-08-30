@@ -1,6 +1,8 @@
+import { Link } from 'wouter';
 import Header from '@/components/Header';
 import HeroCarousel from '@/components/HeroCarousel';
 import PostGrid from '@/components/PostGrid';
+import TagCloud from '@/components/TagCloud';
 import AboutSection from '@/components/AboutSection';
 import SocialMediaSection from '@/components/SocialMediaSection';
 import SiteFooter from '@/components/SiteFooter';
@@ -59,6 +61,18 @@ export default function HomePage() {
               </p>
             }
           />
+        </section>
+
+        <section className="max-w-6xl mx-auto px-6 md:px-8 pb-12 md:pb-16" data-testid="browse-section">
+          <h2 className="text-2xl md:text-3xl font-bold font-serif mb-6 text-center" data-testid="browse-heading">
+            विषयानुसार शोधा (Browse by Tag)
+          </h2>
+          <TagCloud />
+          <p className="text-center mt-8">
+            <Link href="/archive" className="text-primary hover:underline font-medium" data-testid="link-view-archive">
+              पूर्ण संग्रह वर्षानुसार पहा (View the full archive by year) →
+            </Link>
+          </p>
         </section>
 
         <AboutSection

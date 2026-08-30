@@ -107,12 +107,21 @@ export default function Header() {
           <div className="flex items-center justify-between gap-4">
             <nav className="hidden md:flex items-center gap-1" data-testid="navigation">
               <Link href="/">
-                <Button 
-                  variant={location === '/' ? 'secondary' : 'ghost'} 
+                <Button
+                  variant={location === '/' ? 'secondary' : 'ghost'}
                   className="font-medium"
                   data-testid="nav-home"
                 >
                   Home
+                </Button>
+              </Link>
+              <Link href="/archive">
+                <Button
+                  variant={location === '/archive' ? 'secondary' : 'ghost'}
+                  className="font-medium"
+                  data-testid="nav-archive"
+                >
+                  संग्रह
                 </Button>
               </Link>
               {categories.map((category) => (
@@ -167,6 +176,11 @@ export default function Header() {
               <Link href="/" onClick={() => setMobileMenuOpen(false)}>
                 <Button variant={location === '/' ? 'secondary' : 'ghost'} className="w-full justify-start" data-testid="mobile-nav-home">
                   Home
+                </Button>
+              </Link>
+              <Link href="/archive" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant={location === '/archive' ? 'secondary' : 'ghost'} className="w-full justify-start" data-testid="mobile-nav-archive">
+                  संग्रह
                 </Button>
               </Link>
               {categories.map((category) => (

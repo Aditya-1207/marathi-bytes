@@ -8,6 +8,7 @@ import CategoryPage from "@/pages/CategoryPage";
 import PostPage from "@/pages/PostPage";
 import SearchPage from "@/pages/SearchPage";
 import TagPage from "@/pages/TagPage";
+import ArchivePage from "@/pages/ArchivePage";
 import AboutPage from "@/pages/AboutPage";
 import NotFound from "@/pages/not-found";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -24,6 +25,7 @@ function AppRoutes() {
       <Route path="/post/:id" component={PostPage} />
       <Route path="/search" component={SearchPage} />
       <Route path="/tag/:tag" component={TagPage} />
+      <Route path="/archive" component={ArchivePage} />
       <Route path="/about" component={AboutPage} />
       <Route component={NotFound} />
     </Switch>
