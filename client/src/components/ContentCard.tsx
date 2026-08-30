@@ -13,7 +13,6 @@ interface ContentCardProps {
   date: string;
   thumbnail: string;
   tags: string[];
-  onTagClick?: (tag: string) => void;
 }
 
 export default function ContentCard({
@@ -25,7 +24,6 @@ export default function ContentCard({
   date,
   thumbnail,
   tags,
-  onTagClick,
 }: ContentCardProps) {
   return (
     <Card className="overflow-hidden hover-elevate transition-all h-full flex flex-col" data-testid={`card-${id}`}>
@@ -69,7 +67,7 @@ export default function ContentCard({
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-2" data-testid={`card-tags-${id}`}>
             {tags.map((tag) => (
-              <TagPill key={tag} tag={tag} onClick={onTagClick} />
+              <TagPill key={tag} tag={tag} />
             ))}
           </div>
         )}

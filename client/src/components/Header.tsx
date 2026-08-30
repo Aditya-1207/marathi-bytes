@@ -1,17 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'wouter';
+import { Link, useLocation, useSearch } from 'wouter';
 import { Search, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SOCIAL_LINKS } from '@/lib/social';
+import { CATEGORIES as categories } from '@/lib/categories';
 
-interface HeaderProps {
-  categories?: Array<{ id: string; name: string; label: string }>;
-  onSearch?: (query: string) => void;
-}
-
-export default function Header({ categories = [], onSearch }: HeaderProps) {
-  const [location] = useLocation();
+export default function Header() {
+  const [location, setLocation] = useLocation();
+  const searchString = useSearch();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [visible, setVisible] = useState(true);
@@ -54,11 +51,20 @@ export default function Header({ categories = [], onSearch }: HeaderProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Keep the box in sync with the URL: /search?q=… shows what was searched
+  // (including after a refresh or a shared link), and navigating elsewhere
+  // clears it. Typing doesn't change the location, so this won't fight the user.
+  useEffect(() => {
+    const query = new URLSearchParams(searchString).get('q') ?? '';
+    setSearchQuery(location === '/search' ? query : '');
+  }, [location, searchString]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (onSearch && searchQuery.trim()) {
-      onSearch(searchQuery);
-    }
+    const query = searchQuery.trim();
+    if (!query) return;
+    setLocation(`/search?q=${encodeURIComponent(query)}`);
+    setMobileMenuOpen(false);
   };
 
   return (

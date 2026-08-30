@@ -1,26 +1,24 @@
+import { Link } from 'wouter';
 import { Badge } from '@/components/ui/badge';
 
 interface TagPillProps {
   tag: string;
-  onClick?: (tag: string) => void;
 }
 
-export default function TagPill({ tag, onClick }: TagPillProps) {
-  const handleClick = () => {
-    if (onClick) {
-      onClick(tag);
-      console.log('Tag clicked:', tag);
-    }
-  };
-
+/**
+ * A tag always navigates to its listing. Making this a real link — rather than
+ * a click handler each page had to remember to pass down — is what keeps every
+ * tag on the site consistent, and lets readers middle-click or copy the URL.
+ */
+export default function TagPill({ tag }: TagPillProps) {
   return (
-    <Badge
-      variant="outline"
-      className="rounded-full px-4 py-1.5 cursor-pointer hover-elevate active-elevate-2"
-      onClick={handleClick}
-      data-testid={`tag-${tag}`}
-    >
-      {tag}
-    </Badge>
+    <Link href={`/tag/${encodeURIComponent(tag)}`} data-testid={`tag-${tag}`}>
+      <Badge
+        variant="outline"
+        className="rounded-full px-4 py-1.5 cursor-pointer hover-elevate active-elevate-2"
+      >
+        {tag}
+      </Badge>
+    </Link>
   );
 }

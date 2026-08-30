@@ -15,7 +15,7 @@ Anything not listed here should be checked against `mission.md`'s non-goals befo
 
 The site is a client-rendered React SPA, live at https://Aditya-1207.github.io/marathi-bytes/. Content is authored as Markdown with YAML frontmatter under `client/src/content/{poetry,articles,ukhane}/` and compiled into the JS bundle at build time — there is no runtime database or API. A Decap CMS instance at `/admin` gives the author a web form for creating and editing posts, authenticated in production via a GitHub OAuth App and a Cloudflare Worker proxy (`oauth-proxy/`) — verified end-to-end with a real published post. See `CLAUDE.md` for full architecture detail.
 
-Phases 1, 2 and 3 are done: the site is public, the author can self-publish from a browser with no terminal and no help, and the category list lives in one module. The remaining gaps are the ones covered in Phases 4 onward below.
+Phases 1 through 4 are done: the site is public, the author can self-publish from a browser with no terminal and no help, the category list lives in one module, and search and tag browsing work. The remaining gaps are the ones covered in Phases 5 onward below.
 
 ## Phase overview
 
@@ -110,21 +110,28 @@ A curated, author-owned highlights grid — image, caption and permalink stored 
 
 ---
 
-## Phase 4 — Working search and tag browsing · Core
+## Phase 4 — Working search and tag browsing · Core · ✅ Done
 
 **Functionality served:** a reader can find a piece by searching or by following a tag, and every control in the UI leads somewhere real.
 
-Today `HomePage`, `CategoryPage`, `PostPage`, and `AboutPage` all navigate to `/search?q=…`, and the first three also navigate to `/tag/:tag` — **neither route exists in `App.tsx`**, so both 404. A visibly broken feature undercuts the "beautiful, dignified" standard the mission sets. The data is already there: `tags` is a real frontmatter field and a CMS list widget on every collection.
+`HomePage`, `CategoryPage`, `PostPage`, and `AboutPage` all navigated to `/search?q=…`, and the first three also to `/tag/:tag` — **neither route existed in `App.tsx`**, so both 404'd. Both are now built, on the decision that a small in-memory corpus makes client-side search essentially free.
 
 **Tasks**
 
-1. **Decide: build or remove.** Purpose: implement both routes, or strip the handlers and the UI that promise them. Given tags are already authored and searching a small corpus is cheap client-side, building is the recommended path — but a deliberate removal beats a lingering 404.
-2. **Add the `/search` route and results page.** Purpose: filter the eagerly-loaded posts on title, excerpt, body, and tags, and render matches with the existing post-card component. Devanagari input must match correctly — this is not an ASCII-only search.
-3. **Add the `/tag/:tag` route and listing page.** Purpose: show every post carrying a tag, reusing the category-listing layout.
-4. **Handle the empty and missing cases.** Purpose: a search with no hits, and a tag with no posts, need a real empty state rather than a blank page.
-5. **Make the tag affordance consistent.** Purpose: tags render in several places; ensure they all link to the new route so none stay decorative.
+1. **Decide: build or remove.** *(Done — built. The whole corpus is already in the bundle, so search is a filter over an array with no index to maintain.)*
+2. **Add the `/search` route and results page.** *(Done — `SearchPage.tsx`, backed by `client/src/lib/search.ts`.)*
+3. **Add the `/tag/:tag` route and listing page.** *(Done — `TagPage.tsx`, reusing the same listing body as the category page.)*
+4. **Handle the empty and missing cases.** *(Done — three distinct states: a no-query prompt on bare `/search`, a no-results state that offers popular tags, and an unknown-tag state that lists every tag in use. All three offer a route back rather than dead-ending.)*
+5. **Make the tag affordance consistent.** *(Done — `TagPill` is now a real `<Link>` rather than a component taking an `onClick` each page had to remember to pass. Every tag on the site navigates by construction, and readers can middle-click or copy a tag URL.)*
 
-**Done when:** searching from the header and clicking any tag both land on a working page, in Devanagari and Latin alike.
+**Notes on how it was built**
+
+- **Devanagari matching is explicit, not incidental.** `normalizeText()` in `search.ts` applies `.normalize('NFC')` before comparing, because the same visible grapheme can be stored precomposed or as base letter + combining mark depending on whether text came from the CMS, a phone keyboard, or a paste. Without it, a visually identical query silently fails to match. `toLowerCase()` is a no-op for Devanagari (unicameral) but still matters for the Latin text alongside it.
+- **Search covers the transliterated slug and the Latin category id**, not just the Devanagari fields. Every post is written in Devanagari, but readers on a phone without a Marathi keyboard can now find "प्रेमाची भावना" by typing `premaachi`, and the ukhane collection by typing `ukhane`. Verified both.
+- **Route params are decoded defensively.** wouter runs `decodeURI` over the path, which restores Devanagari but deliberately leaves reserved characters (`%2F`, `%26`) encoded; `decodeRouteParam()` finishes the job and falls back to the raw value on a malformed escape rather than throwing a render error.
+- **Incidental cleanups the two new pages made worth doing.** `Header` now reads `CATEGORIES` and performs its own search navigation instead of taking `categories` and `onSearch` props from all six pages; its search box syncs to the URL, so `/search?q=…` shows the query after a refresh or a shared link. A shared `PostGrid` (grid + pagination + empty state) and `SiteFooter` replaced four hand-copied versions of each — the reason task 3 could reuse the category layout instead of copying it a third time.
+
+**Done when:** searching from the header and clicking any tag both land on a working page, in Devanagari and Latin alike. ✅ Verified in the browser against the live dev server: Devanagari search (`प्रेम` → 3 results), Latin search (`ukhane`, `premaachi` → 1 result each), tag navigation by click (`नृत्य` → `कला`), all three empty states, and search-box prefill. `npm run check` and `npm run build` pass; the console is clean.
 
 ---
 

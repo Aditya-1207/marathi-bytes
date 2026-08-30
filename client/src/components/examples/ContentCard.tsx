@@ -13,7 +13,6 @@ export default function ContentCardExample() {
         date="2025-11-20"
         thumbnail={poetryThumbnail}
         tags={['प्रेम', 'भावना', 'जीवन']}
-        onTagClick={(tag) => console.log('Tag clicked:', tag)}
       />
     </div>
   );

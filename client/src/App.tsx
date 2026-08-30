@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import HomePage from "@/pages/HomePage";
 import CategoryPage from "@/pages/CategoryPage";
 import PostPage from "@/pages/PostPage";
+import SearchPage from "@/pages/SearchPage";
+import TagPage from "@/pages/TagPage";
 import AboutPage from "@/pages/AboutPage";
 import NotFound from "@/pages/not-found";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -20,6 +22,8 @@ function AppRoutes() {
       <Route path="/" component={HomePage} />
       <Route path="/category/:category" component={CategoryPage} />
       <Route path="/post/:id" component={PostPage} />
+      <Route path="/search" component={SearchPage} />
+      <Route path="/tag/:tag" component={TagPage} />
       <Route path="/about" component={AboutPage} />
       <Route component={NotFound} />
     </Switch>

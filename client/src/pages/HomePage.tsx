@@ -1,14 +1,10 @@
-import { useState } from 'react';
-import { useLocation } from 'wouter';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import HeroCarousel from '@/components/HeroCarousel';
-import ContentCard from '@/components/ContentCard';
+import PostGrid from '@/components/PostGrid';
 import AboutSection from '@/components/AboutSection';
 import SocialMediaSection from '@/components/SocialMediaSection';
-import { getAllPosts, getPaginatedPosts } from '@/lib/content';
-import { CATEGORIES as categories } from '@/lib/categories';
+import SiteFooter from '@/components/SiteFooter';
+import { getAllPosts } from '@/lib/content';
 import heroImage from '@assets/generated_images/dance_performance_hero_image.png';
 import poetryImage from '@assets/generated_images/poetry_calligraphy_thumbnail.png';
 import cultureImage from '@assets/generated_images/cultural_celebration_thumbnail.png';
@@ -33,23 +29,11 @@ const carouselSlides = [
 ];
 
 export default function HomePage() {
-  const [, setLocation] = useLocation();
-  const [page, setPage] = useState(1);
-
   const allPosts = getAllPosts();
-  const { items, currentPage, totalPages } = getPaginatedPosts(allPosts, page);
-
-  const handleTagClick = (tag: string) => {
-    setLocation(`/tag/${encodeURIComponent(tag)}`);
-  };
-
-  const handleSearch = (query: string) => {
-    setLocation(`/search?q=${encodeURIComponent(query)}`);
-  };
 
   return (
     <div className="min-h-screen bg-background" style={{ paddingTop: 'var(--header-height, 200px)' }}>
-      <Header categories={categories} onSearch={handleSearch} />
+      <Header />
 
       <main>
         <section className="max-w-6xl mx-auto px-6 md:px-8 py-12 md:py-16">
@@ -57,47 +41,14 @@ export default function HomePage() {
             Latest Content
           </h2>
 
-          {items.length === 0 ? (
-            <p className="text-muted-foreground text-lg">No posts yet. Add a .md file to the content folder to get started.</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8" data-testid="content-grid">
-              {items.map((post) => (
-                <ContentCard
-                  key={post.id}
-                  {...post}
-                  onTagClick={handleTagClick}
-                />
-              ))}
-            </div>
-          )}
-
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-4 mt-12" data-testid="pagination">
-              <Button
-                variant="outline"
-                onClick={() => { setPage((p) => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                disabled={currentPage === 1}
-                data-testid="button-prev-page"
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Previous
-              </Button>
-
-              <span className="text-sm text-muted-foreground" data-testid="page-indicator">
-                Page {currentPage} of {totalPages}
-              </span>
-
-              <Button
-                variant="outline"
-                onClick={() => { setPage((p) => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                disabled={currentPage === totalPages}
-                data-testid="button-next-page"
-              >
-                Next
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-          )}
+          <PostGrid
+            posts={allPosts}
+            emptyState={
+              <p className="text-muted-foreground text-lg">
+                No posts yet. Add a .md file to the content folder to get started.
+              </p>
+            }
+          />
         </section>
 
         <AboutSection
@@ -114,13 +65,7 @@ export default function HomePage() {
         </section>
       </main>
 
-      <footer className="bg-muted/30 border-t py-8">
-        <div className="max-w-6xl mx-auto px-6 md:px-8 text-center">
-          <p className="text-muted-foreground" data-testid="footer-text">
-            © 2025 प्राजक्तप्रभा. All rights reserved.
-          </p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
