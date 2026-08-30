@@ -29,8 +29,9 @@ Phases 1 through 4 are done: the site is public, the author can self-publish fro
 | 6 | Lighter pages | Polish | Fast to load, cheap to host, stays that way |
 | 7 | Reader conveniences | Polish | Reading time, and a way to follow new work |
 | 8 | Prune unused scaffolding | Polish | The codebase reads as what it actually is |
+| 9 | Archive, latest, and tag-filter blocks | Polish | More ways to browse the archive than the newest-first feed |
 
-**Sequencing notes.** Phase 2 depends on Phase 1 (the OAuth app and CMS config need a real production URL to authorize against). Phase 3 is deliberately placed before Phase 4 — Phase 4 adds new pages that would otherwise become the fifth and sixth hand-copies of the category list. Phase 8 depends on Phase 1 confirming static hosting as the long-term direction. Everything else is independent.
+**Sequencing notes.** Phase 2 depends on Phase 1 (the OAuth app and CMS config need a real production URL to authorize against). Phase 3 is deliberately placed before Phase 4 — Phase 4 adds new pages that would otherwise become the fifth and sixth hand-copies of the category list. Phase 8 depends on Phase 1 confirming static hosting as the long-term direction. Phase 9 depends on Phase 4's search/tag plumbing (`getAllTags()`, `/tag/:tag`) already existing — both are done, so it's unblocked. Everything else is independent.
 
 ---
 
@@ -203,6 +204,26 @@ Two findings from the Phase 3 audit sharpen this:
 5. **Update the docs.** Purpose: bring `CLAUDE.md` and `spec/tech-stack.md` in line with what remains, so the next contributor's mental model matches the code.
 
 **Done when:** `npm run check` passes, the site builds and deploys unchanged, and nothing in the repo describes machinery that isn't there.
+
+---
+
+## Phase 9 — Archive, latest, and tag-filter blocks · Polish
+
+**Functionality served:** a reader can browse the site the way `mission.md` itself describes it — *"a personal creative archive"* — by date, by "what's newest," and by theme, not only through the single flat newest-first feed on the homepage.
+
+Today there is exactly one way to browse without already knowing what you want: `HomePage.tsx` renders every post via `getAllPosts()` (already sorted newest-first) into one paginated grid, 10 posts per page. Category pages narrow that same grid to one category. Phase 4 added `/search` and `/tag/:tag`, but both are destinations, not discovery surfaces — a reader lands on `/tag/नृत्य` by clicking a pill on a post they're already reading, or sees the full tag list only as a fallback on an *empty* `/search`. There is no page that presents the archive as an archive (grouped by year, the way an author's body of work naturally organizes itself), no compact "recently added" affordance usable anywhere but the homepage's full feed, and no visible, browse-first entry point into tags — `getAllTags()` (added in Phase 4, already returns tag summaries sorted by count) is currently reachable only after the fact.
+
+All three blocks below are pure presentation over data the site already computes client-side — `getAllPosts()` and `getAllTags()` — so this stays consistent with `mission.md`'s "no server to babysit": no new data layer, no runtime fetch, no external tag-cloud or charting dependency.
+
+**Tasks**
+
+1. **Decide where each block lives.** Purpose: homepage sections, a dedicated route (e.g. `/archive`), and/or sidebar panels are different layout commitments, and `design_guidelines.md` currently defines no sidebar pattern at all. Settle this before building three blocks that could end up visually inconsistent with each other and with the rest of the site — the same discipline Phase 3 applied to categories before centralizing them.
+2. **Add a chronological archive/timeline view.** Purpose: group `getAllPosts()` by year (and, within a year, by month) so a reader can browse the body of work as a timeline rather than only ever seeing the newest 10. Needs its own route and a real entry point (nav or footer) — an unlinked page is as good as no page, the same lesson Phase 4 already applied to search and tags.
+3. **Add a reusable "Latest" block.** Purpose: a compact, most-recent-N view that can appear in more than one place (e.g. above the fold on the homepage, or alongside a post on `PostPage`) rather than only existing as the full paginated feed. Worth reviewing once Phase 7's RSS feed exists — an on-site "latest" block and an RSS feed both answer "what's new," from different angles, and should read as complementary rather than redundant.
+4. **Add a visible tag-filter block.** Purpose: surface `getAllTags()` as a first-class, browse-first entry point — a tag cloud or chip list on the homepage or category pages — instead of only as decoration on individual post cards or a fallback a reader sees solely after landing on an empty search. Every chip links into the existing `/tag/:tag` route; this is a new place to *discover* tag browsing, not new routing.
+5. **Keep it data-only.** Purpose: all three blocks derive entirely from `getAllPosts()`/`getAllTags()`, which are already computed from the bundled content — no chart library, external tag-cloud package, or runtime fetch, consistent with the constraint that ruled out a live Instagram feed in Phase 3.
+
+**Done when:** a reader can reach any post through at least one browsing path beyond the flat newest-first feed — by date, by "just published," and by tag — and every one of those paths is reachable from a visible link, not a URL someone has to already know.
 
 ---
 
