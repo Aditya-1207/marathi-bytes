@@ -1,4 +1,5 @@
 import { getAllPosts, type Post } from './content';
+import { devanagariToLatin } from './transliterate';
 
 /**
  * Devanagari can encode the same visible grapheme more than one way
@@ -27,36 +28,63 @@ export function decodeRouteParam(value: string): string {
   }
 }
 
+interface SearchIndexEntry {
+  post: Post;
+  /** Normalized original text plus its transliteration, concatenated once. */
+  haystack: string;
+}
+
+// A handful of manually-created posts have hand-typed Latin filenames
+// (aai.md, premaachi-bhavna.md, …) from before the CMS existed, but every
+// post published through Decap gets its slug from `{{slug}}` in
+// config.yml — generated straight from the Devanagari title, with no
+// transliteration. So the slug, the title, the tags, and the body of a real
+// post are *entirely* Devanagari; there is no Latin text in it for a plain
+// substring search to match against no matter which fields are included.
+// `devanagariToLatin` derives one, so a reader who types "bhet" can still
+// find a post titled "भेट" — this is what makes search work for content
+// added after this file was written, not just the four legacy posts.
+//
+// Built once and reused across every keystroke: `getAllPosts()` re-parses
+// every markdown file on each call (see content.ts), and transliteration adds
+// its own per-post cost — neither should redo work while a reader is typing.
+let searchIndex: SearchIndexEntry[] | null = null;
+
+function getSearchIndex(): SearchIndexEntry[] {
+  if (searchIndex) return searchIndex;
+
+  searchIndex = getAllPosts().map((post) => {
+    const raw = [
+      post.title,
+      post.excerpt,
+      post.content,
+      post.categoryLabel,
+      post.category,
+      post.id,
+      ...post.tags,
+    ].join('\n');
+
+    return {
+      post,
+      haystack: normalizeText(`${raw}\n${devanagariToLatin(raw)}`),
+    };
+  });
+
+  return searchIndex;
+}
+
 /**
- * Substring match across everything a reader would reasonably expect to search:
- * the title, the excerpt, the body, the category, and the tags. The whole corpus
- * is already in memory (see `content.ts`), so this stays a plain filter — no
- * index to build or keep in sync.
- *
- * The slug (`id`) and the Latin category id are searched alongside the
- * Devanagari label on purpose. Every post here is written in Devanagari, but
- * plenty of readers are on a phone with no Marathi keyboard — matching the
- * transliterated slug lets them find "प्रेमाची भावना" by typing "premaachi",
- * and the ukhane collection by typing "ukhane".
+ * Substring match across everything a reader would reasonably expect to
+ * search: the title, the excerpt, the body, the category, the tags — in both
+ * their original script and a phonetic Latin transliteration.
  */
 export function searchPosts(query: string): Post[] {
   const needle = normalizeText(query.trim());
   if (!needle) return [];
 
-  return getAllPosts().filter((post) => {
-    const haystack = normalizeText(
-      [
-        post.title,
-        post.excerpt,
-        post.content,
-        post.categoryLabel,
-        post.category,
-        post.id,
-        ...post.tags,
-      ].join('\n'),
-    );
-    return haystack.includes(needle);
-  });
+  return getSearchIndex()
+    .filter((entry) => entry.haystack.includes(needle))
+    .map((entry) => entry.post);
 }
 
 /** Posts carrying `tag`, compared normalized so casing and NFC/NFD don't split a tag in two. */
