@@ -4,7 +4,7 @@ backend:
   branch: main
   # OAuth proxy deployed from oauth-proxy/ (see oauth-proxy/README.md).
   # Only used when the CMS is loaded from the production URL, not localhost.
-  base_url: https://REPLACE-WITH-YOUR-WORKER-SUBDOMAIN.workers.dev
+  base_url: https://marathibytes-decap-oauth.kulkarni-aditya12.workers.dev
   auth_endpoint: auth
 
 # When the CMS is opened from localhost, Decap uses the local proxy backend
