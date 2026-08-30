@@ -6,7 +6,11 @@ import AboutSection from '@/components/AboutSection';
 import SocialMediaSection from '@/components/SocialMediaSection';
 import SiteFooter from '@/components/SiteFooter';
 import { useDocumentMeta } from '@/hooks/use-document-meta';
-import profileImage from '@assets/generated_images/about_section_portrait.png';
+import { resolveAssetPath } from '@/lib/posts';
+
+// From `/blog-images/`, not a Vite asset import — see the same note in
+// HomePage.tsx (Phase 6: one image location, compressed by one build step).
+const profileImage = resolveAssetPath('/blog-images/about_section_portrait.png', import.meta.env.BASE_URL);
 
 export default function AboutPage() {
   const [, setLocation] = useLocation();

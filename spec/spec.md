@@ -15,7 +15,7 @@ Anything not listed here should be checked against `mission.md`'s non-goals befo
 
 The site is a client-rendered React SPA, live at https://Aditya-1207.github.io/marathi-bytes/. Content is authored as Markdown with YAML frontmatter under `client/src/content/{poetry,articles,ukhane}/` and compiled into the JS bundle at build time — there is no runtime database or API. A Decap CMS instance at `/admin` gives the author a web form for creating and editing posts, authenticated in production via a GitHub OAuth App and a Cloudflare Worker proxy (`oauth-proxy/`) — verified end-to-end with a real published post. See `CLAUDE.md` for full architecture detail.
 
-Phases 1 through 4 and 7 are done: the site is public, the author can self-publish from a browser with no terminal and no help, the category list lives in one module, search and tag browsing work, posts show a reading time, and an RSS feed exists. Phase 5 (per-post share previews) is implemented and locally verified, with one remaining step — confirming with a real scraper — that's blocked on deployment. The remaining gaps are covered in Phases 6, 8, and 9 below.
+Phases 1 through 7 are done: the site is public, the author can self-publish from a browser with no terminal and no help, the category list lives in one module, search and tag browsing work, sharing a post previews as that post (confirmed with a real scraper against the live site), posts show a reading time, an RSS feed exists, and every image is compressed with no duplication. The remaining gaps are covered in Phases 8 and 9 below.
 
 ## Phase overview
 
@@ -136,7 +136,7 @@ A curated, author-owned highlights grid — image, caption and permalink stored 
 
 ---
 
-## Phase 5 — Per-post share previews · Core · Implemented, pending live verification
+## Phase 5 — Per-post share previews · Core · ✅ Done
 
 **Functionality served:** when a reader shares a poem to WhatsApp or Facebook, the preview shows *that poem* — its title, its excerpt, its image.
 
@@ -148,32 +148,29 @@ A curated, author-owned highlights grid — image, caption and permalink stored 
 2. **Feed post frontmatter into the tags.** *(Done — `PostPage.tsx` passes `title`, `excerpt`, `thumbnail`, `type: 'article'`, `publishedTime`, and `postUrl(post.id)` into the hook, which sets `og:*`, `twitter:*`, and `<link rel="canonical">`.)*
 3. **Fill in the site-level defaults.** *(Done — `client/index.html` now carries `og:site_name`, `og:image`, `og:url`, the `twitter:*` equivalents, and a canonical link, for every route that isn't a post.)*
 4. **Address the crawler limitation.** *(Done — `scripts/prerender-posts.ts`, run after `vite build`. Scrapers don't execute JS, so `useDocumentMeta`'s DOM updates are invisible to them; this script bakes the same values into a real static file per post — `dist/public/post/<slug>/index.html` — by cloning the built `index.html` and substituting meta tag values via targeted string replacement, no DOM/HTML parser dependency. Reachable at `/post/<slug>` because GitHub Pages 301-redirects that (no trailing slash) to `/post/<slug>/`, then serves its `index.html` — confirmed against GitHub Pages' documented directory-index behaviour, the same mechanism Jekyll/Hugo rely on for pretty URLs. `postUrl()` already returns the trailing-slash form, so the canonical/og:url values never depend on that redirect actually firing.)*
-5. **Verify with a real scraper.** *(Not yet done — needs the live production URL, which only exists after this merges and the deploy workflow runs. Locally verified instead: `npm run build` produces well-formed per-post HTML with correct `og:title`/`og:description`/`og:image`/`og:url`/`article:published_time` for all 7 current posts, inspected directly; a Devanagari-titled post — `भेट`, slug `20250829-भेट` — correctly percent-encodes into its URL. Once live, run the real post URL through Facebook's Sharing Debugger and Twitter's Card Validator to confirm what a scraper actually sees — a local build inspection is evidence, not proof.)*
+5. **Verify with a real scraper.** *(Done — confirmed on the live production URL via a real social preview debugger. 2026-08-30.)*
 
 **Incidental fix:** deriving a post's `excerpt` when no frontmatter `excerpt` exists (`client/src/lib/posts.ts`) preserved raw newlines from the markdown body. Harmless in a CSS-wrapped card, but it landed literally inside a meta tag's `content="..."` attribute once excerpts started being used for share previews. Now collapsed to single spaces regardless of source (frontmatter or derived) — also a small quality improvement to how excerpts render on cards.
 
-**Done when:** pasting a post URL into WhatsApp shows that post's title and image. Mechanically verified locally; real-scraper confirmation is the one remaining step, blocked on deployment.
+**Done when:** pasting a post URL into WhatsApp shows that post's title and image. ✅ Confirmed both mechanically (local build inspection) and with a real scraper against the live site.
 
 ---
 
-## Phase 6 — Lighter pages · Polish
+## Phase 6 — Lighter pages · Polish · ✅ Done
 
 **Functionality served:** the site loads fast on a phone and stays cheap to host, even as the author keeps adding images.
 
-`client/public/blog-images/` currently holds six PNGs between 1.3MB and 2.0MB each — roughly 9MB for what are used as thumbnails. Decap's media widget uploads straight into that folder at whatever size and format the author's phone produces, so this recurs on its own unless the intake path changes too.
+`client/public/blog-images/` held six PNGs between 1.3MB and 2.0MB each — roughly 9MB for what are used as thumbnails. Decap's media widget uploads straight into that folder at whatever size and format the author's phone produces, so this recurs on its own unless the intake path changes too.
 
-Two findings from the Phase 3 audit sharpen this:
-
-- **`attached_assets/generated_images/` and `client/public/blog-images/` are byte-identical duplicates** of the same six PNGs — the same ~9.7MB stored twice in the repo, under two path aliases (`@assets/*` and the public folder). The homepage imports its carousel and portrait images from `attached_assets/`, while content frontmatter references `/blog-images/`.
-- **The homepage alone ships ~4.7MB** of that: three carousel slides (1.3MB + 1.7MB + 1.7MB) plus the 1.6MB `about_section_portrait.png`. A `npm run build` confirms all four land in `dist/public/assets/` uncompressed, dwarfing the 462KB JS bundle.
+**A live bug turned up while starting this phase.** Two posts were deleted through Decap between Phase 5/7 landing and this phase starting. Git doesn't track empty directories, so that also broke the build (fixed separately — see the `fix/prerender-missing-category-dir` note above) — but it also silently deleted `poetry_calligraphy_thumbnail.png` and `articles_nature_thumbnail.png` from `client/public/blog-images/` via Decap's media library, without updating `categories.ts`'s `defaultThumbnail` values that pointed at them. Nothing currently visible was broken only because the one surviving poetry post specifies its own thumbnail — the next poem or article added without one would have rendered a broken image. Restoring those two files (from the still-intact `attached_assets/` copies) was folded into this phase's de-duplication work rather than handled as a separate fix, since resolving the duplication required deciding which copy survives regardless.
 
 **Tasks**
 
-1. **De-duplicate the two image folders.** Purpose: pick one home for these six files and repoint the other set of references, so compression work happens once and the repo stops carrying two copies.
-2. **Compress the existing images.** Purpose: convert to WebP (or JPEG) at a sensible max dimension and update any references; this is the bulk of the win, available immediately.
-3. **Fix the intake path.** Purpose: keep new uploads from re-inflating page weight — either add a build-time image transform, or document a compress-before-upload step in the authoring guide from Phase 2. Prefer the automatic option; the mission says the author shouldn't have to manage technical steps.
+1. **De-duplicate the two image folders.** *(Done. `client/public/blog-images/` is the one home — it's Decap's configured `public_folder`, so content can only ever reference paths there; that constraint decided the direction. `HomePage.tsx` and `AboutPage.tsx` (previously the only real consumers of `attached_assets/generated_images/`, via `@assets/*` Vite imports) now reference `/blog-images/*` through `resolveAssetPath()` — the same function and convention post thumbnails already use. `client/src/components/examples/` — confirmed unreferenced by `App.tsx` or any real page, Replit-scaffold leftovers — was deleted; it was the only other thing pointing at `attached_assets/generated_images/`, which is now gone entirely.)*
+2. **Compress the existing images.** *(Done — `scripts/optimize-images.ts`, added with `sharp` as a devDependency. Recompresses in place, same filename and same extension, deliberately: converting to WebP was considered but rejected — every reference to these files (post frontmatter, `categories.ts`'s defaults, the homepage's hardcoded images) is a plain string with an extension, and renaming on the way out would mean either silently rewriting authored content or breaking references. Lossy PNG (palette mode, `sharp`'s `{ palette: true }`) achieves most of the same size win without that tradeoff. Capped at 1600px on the long edge. All 6 images: **1.3–2.0MB → 330–580KB, a 71–77% reduction**, visually verified at native size including a face/portrait shot (the most artifact-sensitive case). Total site payload (`dist/public/`) dropped from the images alone contributing ~9.7MB duplicated to **3.2MB total, zero duplication**.)*
+3. **Fix the intake path.** *(Done, the automatic option. The same `optimize-images.ts` runs again as a build step — `npm run build` and `.github/workflows/deploy.yml` both call it against `dist/public/blog-images` after `vite build` — so a raw multi-MB phone photo uploaded through Decap gets compressed before a reader ever sees it, with nothing for the author to do. A real risk surfaced in testing: since the *source* images are now already well-compressed, an early version of this script would have re-compressed them on every single future build — a lossy pass on top of a lossy pass, forever, for no size benefit, since the "already reasonably sized" skip threshold (300KB) sat below what this script's own output actually looks like (330–580KB). Raised to 700KB and verified idempotent: a second pass over already-optimized output now changes nothing, while a simulated ~2MB raw upload still gets caught and compressed correctly.)*
 
-**Done when:** no image in `blog-images/` is over a few hundred KB, the same file isn't stored in two places, and a new CMS upload doesn't reintroduce a multi-megabyte file.
+**Done when:** no image in `blog-images/` is over a few hundred KB, the same file isn't stored in two places, and a new CMS upload doesn't reintroduce a multi-megabyte file. ✅ All three confirmed: largest current image is 580KB (down from up to 2.0MB), `attached_assets/generated_images/` no longer exists, and the build-time step is verified to catch a raw upload while leaving already-optimized images untouched. `npm run check` and `npm run build` pass; browser-verified — homepage carousel, About portrait, and the previously-broken `articles` category default thumbnail all render correctly, console clean.
 
 ---
 

@@ -6,28 +6,32 @@ import SocialMediaSection from '@/components/SocialMediaSection';
 import SiteFooter from '@/components/SiteFooter';
 import { getAllPosts } from '@/lib/content';
 import { useDocumentMeta } from '@/hooks/use-document-meta';
-import heroImage from '@assets/generated_images/dance_performance_hero_image.png';
-import poetryImage from '@assets/generated_images/poetry_calligraphy_thumbnail.png';
-import cultureImage from '@assets/generated_images/cultural_celebration_thumbnail.png';
-import profileImage from '@assets/generated_images/about_section_portrait.png';
+import { resolveAssetPath } from '@/lib/posts';
 
 // Visual-only hero imagery. These slides previously carried "View on Instagram"
 // links to placeholder post URLs that did not exist; the links are gone rather
 // than pointing readers at a 404. See spec.md Phase 3.
+//
+// These come from `/blog-images/` (via resolveAssetPath, same as post
+// thumbnails) rather than a Vite asset import — Phase 6 moved them there so
+// every image on the site lives in one place, gets compressed by the same
+// build-time step, and there's nothing left importing `attached_assets/`.
 const carouselSlides = [
   {
-    image: heroImage,
+    image: resolveAssetPath('/blog-images/dance_performance_hero_image.png', import.meta.env.BASE_URL),
     caption: 'नृत्य - माझे जीवन (Dance - My Life)',
   },
   {
-    image: poetryImage,
+    image: resolveAssetPath('/blog-images/poetry_calligraphy_thumbnail.png', import.meta.env.BASE_URL),
     caption: 'शब्दांच्या माळा (Garland of Words)',
   },
   {
-    image: cultureImage,
+    image: resolveAssetPath('/blog-images/cultural_celebration_thumbnail.png', import.meta.env.BASE_URL),
     caption: 'संस्कृतीचा रंग (Colors of Culture)',
   },
 ];
+
+const profileImage = resolveAssetPath('/blog-images/about_section_portrait.png', import.meta.env.BASE_URL);
 
 export default function HomePage() {
   const allPosts = getAllPosts();
