@@ -5,12 +5,7 @@ import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import ContentCard from '@/components/ContentCard';
 import { getPostsByCategory, getPaginatedPosts } from '@/lib/content';
-
-const categories = [
-  { id: 'poetry', name: 'Poetry', label: 'काव्य-संग्रह' },
-  { id: 'articles', name: 'Articles', label: 'आठवणींचा ठेवा' },
-  { id: 'ukhane', name: 'Ukhane', label: 'उखाणे' },
-];
+import { NAV_CATEGORIES as categories } from '@/lib/categories';
 
 export default function CategoryPage() {
   const params = useParams<{ category: string }>();

@@ -8,16 +8,11 @@ import ContentCard from '@/components/ContentCard';
 import AboutSection from '@/components/AboutSection';
 import SocialMediaSection from '@/components/SocialMediaSection';
 import { getAllPosts, getPaginatedPosts } from '@/lib/content';
+import { NAV_CATEGORIES as categories } from '@/lib/categories';
 import heroImage from '@assets/generated_images/dance_performance_hero_image.png';
 import poetryImage from '@assets/generated_images/poetry_calligraphy_thumbnail.png';
 import cultureImage from '@assets/generated_images/cultural_celebration_thumbnail.png';
 import profileImage from '@assets/generated_images/about_section_portrait.png';
-
-const categories = [
-  { id: 'poetry', name: 'Poetry', label: 'काव्य-संग्रह' },
-  { id: 'articles', name: 'Articles', label: 'आठवणींचा ठेवा' },
-  { id: 'ukhane', name: 'Ukhane', label: 'उखाणे' },
-];
 
 const carouselSlides = [
   {

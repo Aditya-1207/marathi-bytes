@@ -4,16 +4,11 @@ import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import AboutSection from '@/components/AboutSection';
 import SocialMediaSection from '@/components/SocialMediaSection';
+import { NAV_CATEGORIES as categories } from '@/lib/categories';
 import profileImage from '@assets/generated_images/about_section_portrait.png';
 
 export default function AboutPage() {
   const [, setLocation] = useLocation();
-
-  const categories = [
-    { id: 'poetry', name: 'Poetry', label: 'काव्य-संग्रह' },
-    { id: 'articles', name: 'Articles', label: 'आठवणींचा ठेवा' },
-    { id: 'ukhane', name: 'Ukhane', label: 'उखाणे' },
-  ];
 
   const handleSearch = (query: string) => {
     console.log('Search query:', query);

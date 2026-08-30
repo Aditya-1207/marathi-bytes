@@ -9,12 +9,7 @@ import CategoryBadge from '@/components/CategoryBadge';
 import TagPill from '@/components/TagPill';
 import ContentCard from '@/components/ContentCard';
 import { getPostById, getPostsByCategory } from '@/lib/content';
-
-const categories = [
-  { id: 'poetry', name: 'Poetry', label: 'काव्य-संग्रह' },
-  { id: 'articles', name: 'Articles', label: 'आठवणींचा ठेवा' },
-  { id: 'ukhane', name: 'Ukhane', label: 'उखाणे' },
-];
+import { NAV_CATEGORIES as categories } from '@/lib/categories';
 
 export default function PostPage() {
   const params = useParams<{ id: string }>();
