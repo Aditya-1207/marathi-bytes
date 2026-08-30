@@ -13,9 +13,9 @@ Anything not listed here should be checked against `mission.md`'s non-goals befo
 
 ## Current state
 
-The site is a client-rendered React SPA, live at https://Aditya-1207.github.io/marathi-bytes/. Content is authored as Markdown with YAML frontmatter under `client/src/content/{poetry,articles,ukhane,instagram}/` and compiled into the JS bundle at build time — there is no runtime database or API. A Decap CMS instance at `/admin` gives the author a web form for creating and editing posts, authenticated in production via a GitHub OAuth App and a Cloudflare Worker proxy (`oauth-proxy/`) — verified end-to-end with a real published post. See `CLAUDE.md` for full architecture detail.
+The site is a client-rendered React SPA, live at https://Aditya-1207.github.io/marathi-bytes/. Content is authored as Markdown with YAML frontmatter under `client/src/content/{poetry,articles,ukhane}/` and compiled into the JS bundle at build time — there is no runtime database or API. A Decap CMS instance at `/admin` gives the author a web form for creating and editing posts, authenticated in production via a GitHub OAuth App and a Cloudflare Worker proxy (`oauth-proxy/`) — verified end-to-end with a real published post. See `CLAUDE.md` for full architecture detail.
 
-Phases 1 and 2 are done: the site is public, and the author can self-publish from a browser with no terminal and no help. The remaining gaps are the ones covered in Phases 3 onward below.
+Phases 1, 2 and 3 are done: the site is public, the author can self-publish from a browser with no terminal and no help, and the category list lives in one module. The remaining gaps are the ones covered in Phases 4 onward below.
 
 ## Phase overview
 
@@ -76,21 +76,37 @@ Decap CMS at `/admin` now authenticates in production via a GitHub OAuth App and
 
 ---
 
-## Phase 3 — One source of truth for content structure · Core
+## Phase 3 — One source of truth for content structure · Core · ✅ Done
 
 **Functionality served:** the site's notion of "what categories exist" lives in one place, so adding or renaming one is a single edit rather than a hunt.
 
-The `categories` array (id / name / label) is currently hand-duplicated across **four** pages — `HomePage.tsx`, `CategoryPage.tsx`, `PostPage.tsx`, and `AboutPage.tsx` — while `client/src/lib/content.ts` separately maintains its own `CATEGORY_LABELS` and `CATEGORY_DEFAULT_THUMBNAILS` maps. That's six places encoding the same fact. Separately, `content.ts` fully supports an `instagram` category that no navigation, route, or CMS collection references, and whose content folder holds only a `README.md`.
+The `categories` array (id / name / label) was hand-duplicated across **four** pages — `HomePage.tsx`, `CategoryPage.tsx`, `PostPage.tsx`, and `AboutPage.tsx` — while `client/src/lib/content.ts` separately maintained its own `CATEGORY_LABELS` and `CATEGORY_DEFAULT_THUMBNAILS` maps: six places encoding the same fact. All six now read `client/src/lib/categories.ts`. Separately, `content.ts` supported an `instagram` category that no navigation, route, or CMS collection referenced, and whose content folder held only a `README.md` — resolved by the decision below.
+
+**Decision (2026-08-30): the `instagram` category is removed, and social media stays a link out, never a feed pulled in.**
+
+The audit found three unrelated half-built pieces, none of them working:
+
+- The `instagram` category contributed **zero posts by construction** — its folder held only `README.md`, which the loader explicitly skips. It cost a glob, an `ALL_FILES` row, and a `CATEGORIES` entry whose `inNav: false` flag existed solely to describe this one broken case.
+- `HomePage.tsx` hardcoded three carousel slides whose "View on Instagram →" buttons pointed at `instagram.com/p/example1..3` — placeholder URLs that 404.
+- `Header.tsx` and `SocialMediaSection.tsx` each hand-maintained their own copy of the platform list, and every URL was a bare platform homepage. No real profile URL existed anywhere in the repo, so the header's *"Follow me on Instagram and YouTube"* dropped readers on Instagram's logged-out page.
+
+Mirroring an actual Instagram feed was rejected on mission grounds. Every viable route violates a stated non-goal: the Graph API (Basic Display shut down Dec 2024) needs a Business account and 60-day token refresh — *"no server to babysit"*; third-party widgets add tracking cookies and a recurring bill — *"no analytics-driven growth loops"*; official post embeds ship ~1MB of Instagram JS plus an iframe per post and turn into broken grey boxes when a post is deleted. **Instagram is a destination for readers who find a poem here, not a data source for this site.**
+
+A curated, author-owned highlights grid — image, caption and permalink stored in the repo via a Decap *file* collection, rendered as plain lazy `<img>` tags with no runtime fetch — remains the only sustainable way to put Instagram content on-page. It is deliberately **not** scheduled: it must follow Phase 6 (otherwise every highlight is a multi-megabyte phone upload, re-creating the exact problem Phase 6 exists to fix), and it is only worth building if the author will reliably keep it current. A stale grid reads worse than no grid.
 
 **Tasks**
 
-1. **Decide the `instagram` category's fate.** Purpose: either it's part of the content plan (and needs a route, nav entry, and CMS collection) or it isn't (and the loader support should go). A half-wired category is a permanent source of confusion — resolve it before centralizing, so the shared list encodes a real answer.
-2. **Create the shared category module.** Purpose: one exported definition — id, display name, Devanagari label, default thumbnail — that both the UI and `content.ts` consume.
-3. **Migrate the four pages to import it.** Purpose: delete the duplicated literals from `HomePage`, `CategoryPage`, `PostPage`, and `AboutPage`.
-4. **Migrate `content.ts` to it.** Purpose: fold `CATEGORY_LABELS` and `CATEGORY_DEFAULT_THUMBNAILS` into the shared definition so the loader and the UI can't drift.
-5. **Act on the Phase-3-task-1 decision.** Purpose: either wire `instagram` in properly (route + nav + CMS collection) or remove it from the loader, the label/thumbnail maps, and the content folder.
+1. **Decide the `instagram` category's fate.** *(Done — removed; see the decision above.)*
+2. **Create the shared category module.** Purpose: one exported definition — id, display name, Devanagari label, default thumbnail — that both the UI and `content.ts` consume. *(Done — `client/src/lib/categories.ts`.)*
+3. **Migrate the four pages to import it.** *(Done — `HomePage`, `CategoryPage`, `PostPage`, and `AboutPage` all import `CATEGORIES`.)*
+4. **Migrate `content.ts` to it.** *(Done — `CATEGORY_LABELS` and `CATEGORY_DEFAULT_THUMBNAILS` folded into the shared definition, read via `getCategory()`.)*
+5. **Act on the Phase-3-task-1 decision.** *(Done — dropped the `instagram` glob and `ALL_FILES` row from `content.ts`, the `CATEGORIES` entry, and the `client/src/content/instagram/` folder. With no `false` case left, `inNav` and `NAV_CATEGORIES` were removed too and the five call sites now import `CATEGORIES` directly.)*
+6. **Give social links the same treatment.** Purpose: the platform list was duplicated across `Header.tsx` and `SocialMediaSection.tsx` — the same drift problem, one file over. *(Done — `client/src/lib/social.ts` is the single source; both components render from it.)*
+7. **Stop the carousel promising posts that don't exist.** Purpose: a reader-visible 404 undercuts the mission's "beautiful, dignified" standard. *(Done — the `instagramLink` field is gone from `HeroCarousel.tsx` and both slide lists; the carousel is now visual-only. Repointing it at real `/post/<slug>` links, or driving it from the latest posts, is a reasonable future improvement.)*
 
-**Done when:** adding a category is one file edit, and `grep` for a category label returns one definition.
+**Done when:** adding a category is one file edit, and `grep` for a category label returns one definition. ✅ `npm run check` and `npm run build` both pass.
+
+**Carried forward:** the three `url` values in `client/src/lib/social.ts` are still platform homepages rather than the author's real profiles, and the entry for any platform she doesn't actually use should be deleted. Both are now a one-line edit each in that one file — but until they're made, the social links remain cosmetic.
 
 ---
 
@@ -136,12 +152,18 @@ Today `HomePage`, `CategoryPage`, `PostPage`, and `AboutPage` all navigate to `/
 
 `client/public/blog-images/` currently holds six PNGs between 1.3MB and 2.0MB each — roughly 9MB for what are used as thumbnails. Decap's media widget uploads straight into that folder at whatever size and format the author's phone produces, so this recurs on its own unless the intake path changes too.
 
+Two findings from the Phase 3 audit sharpen this:
+
+- **`attached_assets/generated_images/` and `client/public/blog-images/` are byte-identical duplicates** of the same six PNGs — the same ~9.7MB stored twice in the repo, under two path aliases (`@assets/*` and the public folder). The homepage imports its carousel and portrait images from `attached_assets/`, while content frontmatter references `/blog-images/`.
+- **The homepage alone ships ~4.7MB** of that: three carousel slides (1.3MB + 1.7MB + 1.7MB) plus the 1.6MB `about_section_portrait.png`. A `npm run build` confirms all four land in `dist/public/assets/` uncompressed, dwarfing the 462KB JS bundle.
+
 **Tasks**
 
-1. **Compress the existing images.** Purpose: convert to WebP (or JPEG) at a sensible max dimension and update any references; this is the bulk of the win, available immediately.
-2. **Fix the intake path.** Purpose: keep new uploads from re-inflating page weight — either add a build-time image transform, or document a compress-before-upload step in the authoring guide from Phase 2. Prefer the automatic option; the mission says the author shouldn't have to manage technical steps.
+1. **De-duplicate the two image folders.** Purpose: pick one home for these six files and repoint the other set of references, so compression work happens once and the repo stops carrying two copies.
+2. **Compress the existing images.** Purpose: convert to WebP (or JPEG) at a sensible max dimension and update any references; this is the bulk of the win, available immediately.
+3. **Fix the intake path.** Purpose: keep new uploads from re-inflating page weight — either add a build-time image transform, or document a compress-before-upload step in the authoring guide from Phase 2. Prefer the automatic option; the mission says the author shouldn't have to manage technical steps.
 
-**Done when:** no image in `blog-images/` is over a few hundred KB, and a new CMS upload doesn't reintroduce a multi-megabyte file.
+**Done when:** no image in `blog-images/` is over a few hundred KB, the same file isn't stored in two places, and a new CMS upload doesn't reintroduce a multi-megabyte file.
 
 ---
 

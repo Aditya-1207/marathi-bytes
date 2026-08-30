@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import ContentCard from '@/components/ContentCard';
 import { getPostsByCategory, getPaginatedPosts } from '@/lib/content';
-import { NAV_CATEGORIES as categories } from '@/lib/categories';
+import { CATEGORIES as categories } from '@/lib/categories';
 
 export default function CategoryPage() {
   const params = useParams<{ category: string }>();

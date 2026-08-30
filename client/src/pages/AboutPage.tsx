@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import AboutSection from '@/components/AboutSection';
 import SocialMediaSection from '@/components/SocialMediaSection';
-import { NAV_CATEGORIES as categories } from '@/lib/categories';
+import { CATEGORIES as categories } from '@/lib/categories';
 import profileImage from '@assets/generated_images/about_section_portrait.png';
 
 export default function AboutPage() {

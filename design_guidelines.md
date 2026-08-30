@@ -57,7 +57,7 @@
 **Hero-style carousel on home page:**
 - Full-width section: w-full, height: 400px (mobile), 600px (desktop)
 - Slides: Large format photos with subtle gradient overlay on bottom third
-- Overlay content: Small caption text, Instagram link icon (positioned bottom-right)
+- Overlay content: Small caption text (the slides are visual-only — they carry no per-slide outbound link; see `spec/spec.md` Phase 3)
 - Controls: Subtle arrow buttons (sides), dot indicators (bottom-center)
 - Auto-play: 5-second interval, pause on hover
 - Position: Below header, above content grid (first section on home)
@@ -94,8 +94,9 @@
 
 ### Social Media Section
 **Dedicated social hub area (in footer or sidebar):**
-- Three columns: Instagram | YouTube | Facebook
-- Each column: Platform icon, thumbnail preview, follower count placeholder, "Follow" link
+- One column per platform defined in `client/src/lib/social.ts` (currently Instagram | YouTube | Facebook)
+- Each column: Platform icon, short description, "Follow" link out to the profile
+- No follower counts, embedded feeds, or post previews — those require a live platform API and are ruled out (see `spec/spec.md` Phase 3)
 - Layout: flex or grid-cols-3, gap-8
 
 ## Images
@@ -106,7 +107,6 @@
    - Lifestyle/dance performance shots showcasing the creator
    - Dimensions: 1920x1080px minimum
    - Treatment: Subtle vignette, bottom gradient for text overlay
-   - Each linked to corresponding Instagram post
 
 2. **Content Thumbnails:**
    - Poetry: Abstract Devanagari calligraphy, nature imagery

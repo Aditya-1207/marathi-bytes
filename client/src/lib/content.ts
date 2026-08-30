@@ -59,17 +59,10 @@ const ukhaneFiles = import.meta.glob('../content/ukhane/*.md', {
   eager: true,
 }) as Record<string, string>;
 
-const instagramFiles = import.meta.glob('../content/instagram/*.md', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-}) as Record<string, string>;
-
 const ALL_FILES: Array<{ category: string; files: Record<string, string> }> = [
   { category: 'poetry', files: poetryFiles },
   { category: 'articles', files: articleFiles },
   { category: 'ukhane', files: ukhaneFiles },
-  { category: 'instagram', files: instagramFiles },
 ];
 
 function buildPosts(): Post[] {

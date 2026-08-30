@@ -9,7 +9,7 @@ import CategoryBadge from '@/components/CategoryBadge';
 import TagPill from '@/components/TagPill';
 import ContentCard from '@/components/ContentCard';
 import { getPostById, getPostsByCategory } from '@/lib/content';
-import { NAV_CATEGORIES as categories } from '@/lib/categories';
+import { CATEGORIES as categories } from '@/lib/categories';
 
 export default function PostPage() {
   const params = useParams<{ id: string }>();

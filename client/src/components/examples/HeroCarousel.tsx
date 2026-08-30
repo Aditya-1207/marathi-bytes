@@ -8,17 +8,14 @@ export default function HeroCarouselExample() {
     {
       image: heroImage,
       caption: 'नृत्य - माझे जीवन (Dance - My Life)',
-      instagramLink: 'https://instagram.com/p/example1',
     },
     {
       image: poetryImage,
       caption: 'शब्दांच्या माळा (Garland of Words)',
-      instagramLink: 'https://instagram.com/p/example2',
     },
     {
       image: cultureImage,
       caption: 'संस्कृतीचा रंग (Colors of Culture)',
-      instagramLink: 'https://instagram.com/p/example3',
     },
   ];
 

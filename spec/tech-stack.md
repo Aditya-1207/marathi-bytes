@@ -25,7 +25,9 @@ What's actually running this project, why each piece is here, and — importantl
 
 ## Content model
 
-Content is **not** stored in a database. It's Markdown files with YAML frontmatter under `client/src/content/{poetry,articles,ukhane,instagram}/*.md`, loaded eagerly at build time via Vite's `import.meta.glob` (see `client/src/lib/content.ts`) and compiled directly into the JS bundle. There is no content API and no runtime fetch for posts.
+Content is **not** stored in a database. It's Markdown files with YAML frontmatter under `client/src/content/{poetry,articles,ukhane}/*.md`, loaded eagerly at build time via Vite's `import.meta.glob` (see `client/src/lib/content.ts`) and compiled directly into the JS bundle. There is no content API and no runtime fetch for posts. The category list itself lives in `client/src/lib/categories.ts`, which both the loader and the UI read.
+
+**No social media integration.** There is no Instagram/YouTube/Facebook API client, widget, embed script, or access token anywhere in this project, and by decision there should not be — see `spec/spec.md` Phase 3. Social platforms are linked to from `client/src/lib/social.ts` and nothing more; that keeps the site free of third-party JS, tracking cookies, and expiring credentials, all of which `mission.md` rules out.
 
 ## Content authoring
 

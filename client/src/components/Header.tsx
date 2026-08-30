@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Search, Menu, X, Instagram, Youtube, Facebook } from 'lucide-react';
+import { Search, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { SOCIAL_LINKS } from '@/lib/social';
 
 interface HeaderProps {
   categories?: Array<{ id: string; name: string; label: string }>;
@@ -80,15 +81,19 @@ export default function Header({ categories = [], onSearch }: HeaderProps) {
           </p>
           
           <div className="flex items-center justify-center gap-4 md:gap-6 mt-4" data-testid="social-links">
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="hover-elevate rounded-full p-2" data-testid="link-instagram">
-              <Instagram className="w-5 h-5 md:w-6 md:h-6 text-primary" />
-            </a>
-            <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="hover-elevate rounded-full p-2" data-testid="link-youtube">
-              <Youtube className="w-5 h-5 md:w-6 md:h-6 text-primary" />
-            </a>
-            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="hover-elevate rounded-full p-2" data-testid="link-facebook">
-              <Facebook className="w-5 h-5 md:w-6 md:h-6 text-primary" />
-            </a>
+            {SOCIAL_LINKS.map(({ id, name, icon: Icon, url }) => (
+              <a
+                key={id}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover-elevate rounded-full p-2"
+                aria-label={name}
+                data-testid={`link-${id}`}
+              >
+                <Icon className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+              </a>
+            ))}
           </div>
         </div>
 
