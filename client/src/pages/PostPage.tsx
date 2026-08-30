@@ -8,8 +8,8 @@ import Header from '@/components/Header';
 import CategoryBadge from '@/components/CategoryBadge';
 import TagPill from '@/components/TagPill';
 import ContentCard from '@/components/ContentCard';
+import SiteFooter from '@/components/SiteFooter';
 import { getPostById, getPostsByCategory } from '@/lib/content';
-import { CATEGORIES as categories } from '@/lib/categories';
 
 export default function PostPage() {
   const params = useParams<{ id: string }>();
@@ -17,14 +17,6 @@ export default function PostPage() {
   const postId = params.id ?? '';
 
   const post = getPostById(postId);
-
-  const handleSearch = (query: string) => {
-    setLocation(`/search?q=${encodeURIComponent(query)}`);
-  };
-
-  const handleTagClick = (tag: string) => {
-    setLocation(`/tag/${encodeURIComponent(tag)}`);
-  };
 
   const handleShare = (platform: string) => {
     const url = window.location.href;
@@ -47,7 +39,7 @@ export default function PostPage() {
   if (!post) {
     return (
       <div className="min-h-screen bg-background" style={{ paddingTop: 'var(--header-height, 200px)' }}>
-        <Header categories={categories} onSearch={handleSearch} />
+        <Header />
         <div className="max-w-3xl mx-auto px-6 md:px-8 py-12 text-center">
           <h1 className="text-3xl font-bold mb-4">Post Not Found</h1>
           <Button onClick={() => setLocation('/')}>Go Home</Button>
@@ -62,7 +54,7 @@ export default function PostPage() {
 
   return (
     <div className="min-h-screen bg-background" style={{ paddingTop: 'var(--header-height, 200px)' }}>
-      <Header categories={categories} onSearch={handleSearch} />
+      <Header />
 
       <article className="max-w-3xl mx-auto px-6 md:px-8 py-12 md:py-16">
         <Button
@@ -95,7 +87,7 @@ export default function PostPage() {
           {post.tags.length > 0 && (
             <div className="flex flex-wrap gap-2" data-testid="post-tags">
               {post.tags.map((tag) => (
-                <TagPill key={tag} tag={tag} onClick={handleTagClick} />
+                <TagPill key={tag} tag={tag} />
               ))}
             </div>
           )}
@@ -142,20 +134,14 @@ export default function PostPage() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {relatedPosts.map((related) => (
-                <ContentCard key={related.id} {...related} onTagClick={handleTagClick} />
+                <ContentCard key={related.id} {...related} />
               ))}
             </div>
           </div>
         )}
       </article>
 
-      <footer className="bg-muted/30 border-t py-8">
-        <div className="max-w-6xl mx-auto px-6 md:px-8 text-center">
-          <p className="text-muted-foreground">
-            © 2025 प्राजक्तप्रभा. All rights reserved.
-          </p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

@@ -4,20 +4,15 @@ import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import AboutSection from '@/components/AboutSection';
 import SocialMediaSection from '@/components/SocialMediaSection';
-import { CATEGORIES as categories } from '@/lib/categories';
+import SiteFooter from '@/components/SiteFooter';
 import profileImage from '@assets/generated_images/about_section_portrait.png';
 
 export default function AboutPage() {
   const [, setLocation] = useLocation();
 
-  const handleSearch = (query: string) => {
-    console.log('Search query:', query);
-    setLocation(`/search?q=${encodeURIComponent(query)}`);
-  };
-
   return (
     <div className="min-h-screen bg-background" style={{ paddingTop: 'var(--header-height, 200px)' }}>
-      <Header categories={categories} onSearch={handleSearch} />
+      <Header />
 
       <main>
         <div className="max-w-6xl mx-auto px-6 md:px-8 py-12">
@@ -42,13 +37,7 @@ export default function AboutPage() {
         <SocialMediaSection />
       </main>
 
-      <footer className="bg-muted/30 border-t py-8">
-        <div className="max-w-6xl mx-auto px-6 md:px-8 text-center">
-          <p className="text-muted-foreground">
-            © 2025 प्राजक्तप्रभा. All rights reserved.
-          </p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
