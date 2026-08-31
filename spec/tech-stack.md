@@ -1,6 +1,6 @@
 # Tech Stack
 
-What's actually running this project, why each piece is here, and — importantly — what's present but **not** currently load-bearing. That distinction matters: this codebase started from a generic Replit full-stack scaffold, and Phase 8 (`spec.md`) already pruned most of what that scaffold added and nothing ever used (the database layer, auth scaffolding, dead server routes, unused TanStack Query wiring). What's left below and marked dev-only is intentional, not leftover.
+What's actually running this project, why each piece is here, and — importantly — what's present but **not** currently load-bearing. That distinction matters: this codebase started from a generic Replit full-stack scaffold, and Phase 8 (`spec.md`) pruned nearly everything that scaffold added and nothing ever used — the database layer, auth scaffolding, dead server routes, unused TanStack Query wiring, and (on a second pass) 43 of 47 scaffolded shadcn/ui primitives and every npm package whose only consumer was one of them. What's left below and marked dev-only is intentional, not leftover.
 
 ## Build & language
 
@@ -18,8 +18,7 @@ What's actually running this project, why each piece is here, and — importantl
 |---|---|
 | **React 18** | UI library. |
 | **wouter** | Client-side routing — small, hook-based, no server-rendering support. |
-| **Tailwind CSS 3 + shadcn/ui** (`"new-york"` style, Radix UI primitives underneath) | Styling and component primitives. Configured via `components.json`; design tokens and spacing conventions documented in `design_guidelines.md`. |
-| **Framer Motion** | Animation (card hover, transitions). |
+| **Tailwind CSS 3 + shadcn/ui** (`"new-york"` style) | Styling and component primitives — but only 4 of the originally-scaffolded 47 shadcn primitives are actually used: `badge`, `button`, `card`, `input` (each backed by one Radix package: `@radix-ui/react-slot`, used by `button`, is the only Radix dependency left). Configured via `components.json`, kept so `npx shadcn add <name>` can re-add a primitive if a real need shows up; design tokens and spacing conventions documented in `design_guidelines.md`. See `spec.md` Phase 8 for the audit that found the other 43 unreachable and removed them, along with every dependency (`react-hook-form`, `recharts`, `cmdk`, `vaul`, `embla-carousel-react`, `react-day-picker`, `react-resizable-panels`, `input-otp`, `@hookform/resolvers`, `tailwindcss-animate`, and 27 more `@radix-ui/*` packages) whose only consumer was one of them. |
 | **react-markdown** | Renders post body Markdown to HTML on `PostPage`. |
 | **lucide-react** / **react-icons** | Icon sets. |
 | **js-yaml** | Parses YAML frontmatter in content files — deliberately a real YAML parser (not hand-rolled) so it correctly handles both simple inline frontmatter and the multi-line list style the CMS writes. |
