@@ -15,7 +15,7 @@ Anything not listed here should be checked against `mission.md`'s non-goals befo
 
 The site is a client-rendered React SPA, live at https://Aditya-1207.github.io/marathi-bytes/. Content is authored as Markdown with YAML frontmatter under `client/src/content/{poetry,articles,ukhane}/` and compiled into the JS bundle at build time — there is no runtime database or API. A Decap CMS instance at `/admin` gives the author a web form for creating and editing posts, authenticated in production via a GitHub OAuth App and a Cloudflare Worker proxy (`oauth-proxy/`) — verified end-to-end with a real published post. See `CLAUDE.md` for full architecture detail.
 
-Phases 1 through 7 and 9 are done: the site is public, the author can self-publish from a browser with no terminal and no help, the category list lives in one module, search and tag browsing work, sharing a post previews as that post (confirmed with a real scraper against the live site), posts show a reading time, an RSS feed exists, every image is compressed with no duplication, and a reader can browse the archive by year, by newest, or by tag. Phase 8 (pruning unused server/database scaffolding) is the one gap left, and is deliberately optional-on-timing — see its own notes below.
+All nine phases are done: the site is public, the author can self-publish from a browser with no terminal and no help, the category list lives in one module, search and tag browsing work, sharing a post previews as that post (confirmed with a real scraper against the live site), posts show a reading time, an RSS feed exists, every image is compressed with no duplication, a reader can browse the archive by year, by newest, or by tag, and the repo carries no server/database/auth scaffolding it doesn't actually use. There is no open Core or Polish work left on this roadmap; new phases start from a fresh gap against `mission.md`, not from what's below.
 
 ## Phase overview
 
@@ -192,21 +192,41 @@ Built together with Phase 5 — both turned out to need the same underlying move
 
 ---
 
-## Phase 8 — Prune unused scaffolding · Polish
+## Phase 8 — Prune unused scaffolding · Polish · ✅ Done
 
 **Functionality served:** the repo reads as the static content site it actually is, so future work isn't spent tracing machinery nothing calls.
 
-`server/routes.ts` (empty), `server/storage.ts` (unused `MemStorage`), `shared/schema.ts` + Drizzle, Passport, and `express-session` are all present with nothing calling them — no routes are registered, and there are no `useQuery`/`useMutation` calls anywhere in the client despite TanStack Query being wired up in `App.tsx`. This phase should wait until Phase 1 has confirmed static hosting is the long-term direction.
+`server/routes.ts` (empty), `server/storage.ts` (unused `MemStorage`), `shared/schema.ts` + Drizzle, Passport, and `express-session` were all present with nothing calling them — no routes were registered, and there were no `useQuery`/`useMutation` calls anywhere in the client despite TanStack Query being wired up in `App.tsx`.
 
 **Tasks**
 
-1. **Remove the dead server modules.** Purpose: delete `server/routes.ts` and `server/storage.ts` and their wiring.
-2. **Remove the database layer.** Purpose: delete `shared/schema.ts` and `drizzle.config.ts`, drop the Drizzle dependency and the `db:push` script — there is no database and the mission says there shouldn't be.
-3. **Remove the auth dependencies.** Purpose: drop Passport and `express-session` and any config referencing them; authoring is authenticated by GitHub OAuth in Phase 2, not by the app.
-4. **Re-evaluate TanStack Query.** Purpose: it's wired into `App.tsx` but nothing queries anything — keep it only if a concrete use is in view, otherwise remove the provider too.
-5. **Update the docs.** Purpose: bring `CLAUDE.md` and `spec/tech-stack.md` in line with what remains, so the next contributor's mental model matches the code.
+1. **Remove the dead server modules.** *(Done. `server/routes.ts` and `server/storage.ts` deleted. `routes.ts`'s only real function — `registerRoutes()` — did nothing but `createServer(app)`; `app.ts` now calls that directly, so nothing about the dev server's actual behavior changed.)*
+2. **Remove the database layer.** *(Done. `shared/schema.ts` and `drizzle.config.ts` deleted, along with the `shared/` directory itself — `schema.ts` was its only file, and `storage.ts` (also deleted) was its only consumer, so the `@shared/*` path alias in `tsconfig.json` and `vite.config.ts` came out too. Dropped `drizzle-orm`, `drizzle-zod`, `drizzle-kit`, `@neondatabase/serverless`, and the `db:push` script.)*
+3. **Remove the auth dependencies.** *(Done. Dropped `passport`, `passport-local`, `express-session`, `connect-pg-simple`, `memorystore`, and their `@types/*` packages — grepped first to confirm zero imports anywhere in `client`/`server`/`shared` before removing any of them.)*
+4. **Re-evaluate TanStack Query.** *(Done — removed. No concrete use was in view; `App.tsx` only ever imported `QueryClientProvider` to wrap the tree, never `useQuery`/`useMutation`. Removing `client/src/lib/queryClient.ts` and the provider also shrank the client JS bundle by ~27KB — a real, if incidental, page-weight win.)*
+5. **Update the docs.** *(Done — `CLAUDE.md`'s server section and `spec/tech-stack.md`'s former "Backend (present, not load-bearing)" section both rewritten to describe what's actually left, not what used to be there.)*
+6. **Audit the shadcn/ui-adjacent packages left untouched above.** *(Done — added 2026-08-31, after the phase first shipped. See below.)*
 
-**Done when:** `npm run check` passes, the site builds and deploys unchanged, and nothing in the repo describes machinery that isn't there.
+**Two mechanical follow-ons, not separately scoped tasks but direct consequences of the above:** `zod` and `zod-validation-error` (only import was `shared/schema.ts`, now gone) and `ws` + the `bufferutil` optional dependency (only reason either existed was `@neondatabase/serverless`'s WebSocket driver, also now gone) were removed too — leaving either in place would have meant "pruning" the exact subsystem that made them necessary while still shipping their orphaned remains.
+
+**Task 6, added after the fact: auditing what task 5's first pass deliberately left untouched.** The original version of this phase explicitly declined to audit `react-hook-form`, `@hookform/resolvers`, `cmdk`, `embla-carousel-react`, `recharts`, `vaul`, `input-otp`, `react-day-picker`, `react-resizable-panels`, and the full `client/src/components/ui/*` primitive set (~47 files) — reasonably, at the time, since it's a materially different, larger task than the rest of the phase's named scope. A follow-up request asked for exactly that audit. The result: **only 4 of 47 shadcn primitives were reachable from any real page or component — `badge`, `button`, `card`, `input`.** Two components initially assumed "live" because they're wired into `App.tsx` turned out to be dead the same way TanStack Query was:
+- `toast`/`toaster` — `<Toaster />` renders in `App.tsx`, but `toast()` is never called anywhere in the app.
+- `tooltip` — `<TooltipProvider>` wraps the entire tree, but an actual `<Tooltip>` is only ever used inside `chart.tsx` and `sidebar.tsx` — both themselves unreachable.
+
+Deleted: 43 of 47 `client/src/components/ui/*.tsx` files, the two hooks whose only consumers were among them (`use-toast.ts`, `use-mobile.tsx`), the `<TooltipProvider>`/`<Toaster>` wiring in `App.tsx`, and every npm package whose only consumer was one of those files — 27 `@radix-ui/*` packages, `cmdk`, `embla-carousel-react`, `input-otp`, `react-day-picker`, `react-hook-form`, `react-resizable-panels`, `recharts`, `vaul`, `@hookform/resolvers` (confirmed zero usage independent of this, even before the ui-file audit).
+
+The same sweep also caught three things that aren't shadcn primitives but are the identical pattern — confirmed genuinely unused, not merely "not part of this audit":
+- `tailwindcss-animate` — its `animate-in`/`animate-out`/`data-[state=]` utility classes were used only inside files just deleted (`toast.tsx`, `tooltip.tsx`, and others); removed from `tailwind.config.ts`'s `plugins`, along with the `accordion-down`/`accordion-up` keyframes that existed solely for the now-deleted `accordion.tsx`.
+- `@tailwindcss/vite` — a Tailwind v4 Vite plugin that was never actually wired into `vite.config.ts`; this project uses classic PostCSS (`postcss.config.js`) with Tailwind CSS 3.
+- `date-fns`, `next-themes`, `framer-motion` — zero usage anywhere in `client/src`, independent of any shadcn file. `framer-motion` in particular contradicted `CLAUDE.md`'s own prior description of it as powering "card hover, transitions" — that description was simply stale.
+
+**Result:** the production CSS bundle dropped from 92.56KB to 47.07KB (nearly half), and the JS bundle dropped a further ~58KB on top of task 4's ~27KB TanStack Query win.
+
+**Still deliberately not touched:** `components.json` (the shadcn CLI config) is kept — it costs nothing to keep and remains genuinely useful if a real future need justifies re-adding a specific primitive via `npx shadcn add`. The `@replit/vite-plugin-*` devDependencies and CSS custom properties for now-unused design tokens (`--chart-*`, `--sidebar-*` in `index.css`) were also left alone — cleaning up inert CSS variables and Replit-scaffold dev tooling is a different, smaller-stakes question than "is this JS actually shipped to a reader," and wasn't part of what was asked.
+
+**Incidental fix, unrelated to the pruning itself:** `tsconfig.json`'s `include` never covered `scripts/` (added across Phases 5–7), so `npm run check` had never actually type-checked the build scripts — only running them would have caught a type error. Added `scripts/**/*` to `include` while touching this file for the `shared/**/*` removal anyway.
+
+**Done when:** `npm run check` passes, the site builds and deploys unchanged, and nothing in the repo describes machinery that isn't there. ✅ `npm run check` and `npm run build` both pass; `npm run dev` smoke-tested after the `server/app.ts` change (dev server boots, site renders, console clean); the GitHub Pages deploy is unaffected either way, since it never ran this server. Re-verified after task 6: browser-tested across the homepage, search, and a post page (confirming `badge`/`button`/`card`/`input` all render correctly on the smaller CSS bundle), console clean.
 
 ---
 
