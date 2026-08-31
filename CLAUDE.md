@@ -9,13 +9,12 @@ Before planning new work, also read `spec/mission.md` (why this project exists a
 ```
 npm install       # install dependencies
 npm run dev        # start dev server (Vite middleware + Express) on PORT env var, default 5000
-npm run build       # vite build (client) + esbuild bundle of server/index-prod.ts into dist/index.js, then the two scripts below
+npm run build       # vite build (client) + esbuild bundle of server/index-prod.ts into dist/index.js, then the three scripts below
 npm run prerender    # scripts/prerender-posts.ts alone — bakes per-post OG/Twitter tags into dist/public/post/<slug>/index.html; needs a prior `vite build`
 npm run rss          # scripts/generate-rss.ts alone — writes dist/public/rss.xml; needs a prior `vite build`
 npm run optimize-images <dir>  # scripts/optimize-images.ts alone — recompresses images in place in <dir>, e.g. client/public/blog-images or dist/public/blog-images
 npm start           # run the production build (requires npm run build first)
-npm run check        # tsc --noEmit type-check across client/server/shared
-npm run db:push      # drizzle-kit push — pushes shared/schema.ts to DATABASE_URL (schema is currently unused by the app; see below)
+npm run check        # tsc --noEmit type-check across client, server, and scripts
 ```
 
 There is no test suite/framework configured in this repo.
@@ -58,16 +57,13 @@ Categories are defined once in `client/src/lib/categories.ts` (`CATEGORIES`, plu
 
 **Content authoring via Decap CMS:** `client/public/admin/` (`config.yml` + `index.html`) is a Decap CMS instance that gives non-technical editors a web form to create/edit posts, which commits directly to the `client/src/content/*` folders via the GitHub API (`backend.repo: Aditya-1207/marathi-bytes`, branch `main`). `local_backend: true` lets you test the CMS without OAuth by running `npx decap-server` alongside `npm run dev`, then visiting `/admin/index.html` (note: in dev mode, `/admin/` without the filename 404s — see server note below; this isn't an issue in the production static build).
 
-**Server (`server/`)** is mostly inert:
+**Server (`server/`)** exists only to run and preview the app locally — `npm run dev` and, for a local production-build smoke test, `npm start`. It is not part of the deployed site: GitHub Pages serves `dist/public` as static files directly (`.github/workflows/deploy.yml` uploads that folder as the Pages artifact; nothing runs this server there).
 - `app.ts` — shared Express app, request logger, and the `server.listen(...)` call. `reusePort` is conditioned on `process.platform !== "win32"` because it's a Linux-only socket option that throws `ENOTSUP` on Windows.
 - `index-dev.ts` — mounts Vite in middleware mode with `appType: "custom"`, which disables Vite's automatic directory→`index.html` resolution (so `/admin/` needs the explicit `/admin/index.html` path in dev; static hosting doesn't have this issue).
 - `index-prod.ts` — just `express.static(dist/public)` with an SPA fallback to `index.html`.
-- `routes.ts` — empty scaffold (no routes registered).
-- `storage.ts` — in-memory `MemStorage` implementing a `users` CRUD interface; unused.
-- `shared/schema.ts` + `drizzle.config.ts` — Drizzle ORM schema for a Postgres `users` table; scaffolded but nothing in the app calls it.
 
-None of the above server/db/auth machinery is load-bearing for the blog itself — the site is fully static content once built, so it's a valid target for static hosting (e.g. GitHub Pages) with the Express server dropped entirely.
+Phase 8 (`spec/spec.md`) removed everything that used to sit alongside these two entry points with nothing calling it: `routes.ts` (an empty scaffold — `app.ts` now calls `createServer(app)` directly, since that's all `routes.ts` ever did), `storage.ts` (an in-memory `MemStorage` nothing referenced), `shared/schema.ts` + `drizzle.config.ts` (a Postgres schema with no database behind it), Passport + `express-session` (no login flow anywhere — authoring is authenticated by GitHub OAuth in Decap, not by this app), and `@tanstack/react-query` (wired into `App.tsx` via `QueryClientProvider` but zero `useQuery`/`useMutation` calls anywhere — removing it also shrank the client bundle by ~27KB). The `shared/` directory and its `@shared/*` path alias are gone along with `schema.ts`, its only consumer.
 
 **UI:** shadcn/ui (`"new-york"` style, configured in `components.json`) + Tailwind CSS 3. Shared primitives live in `client/src/components/ui`; page-level composed components live directly in `client/src/components`. `design_guidelines.md` documents the intended typography, spacing, and component specs (Devanagari + Latin type pairing, card/carousel/pill specs, etc.) — consult it before changing layout or visual design.
 
-**Path aliases** (`tsconfig.json` / `vite.config.ts`): `@/*` → `client/src/*`, `@shared/*` → `shared/*`. There is no `@assets/*` alias any more — Phase 6 removed it along with `attached_assets/generated_images/`; every image on the site now lives under `client/public/blog-images/` and is referenced the same way, whether it's a post thumbnail (frontmatter) or one of the homepage's hardcoded images (`resolveAssetPath()` from `posts.ts`).
+**Path aliases** (`tsconfig.json` / `vite.config.ts`): `@/*` → `client/src/*`, and that's the only one left. `@assets/*` was removed in Phase 6 (`attached_assets/generated_images/` is gone; every image lives under `client/public/blog-images/` now, referenced via `resolveAssetPath()`) and `@shared/*` was removed in Phase 8, along with the `shared/` directory it pointed at.
